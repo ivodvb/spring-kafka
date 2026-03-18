@@ -22,11 +22,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -57,7 +58,6 @@ import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.InvalidPartitionsException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -67,6 +67,7 @@ import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.support.TopicForRetryable;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -81,7 +82,6 @@ import org.springframework.util.Assert;
  * @author Anders Swanson
  * @author Omer Celik
  * @author Choi Wang Gyu
- * @author Go Beom Jun
  *
  * @since 1.3
  */
@@ -103,7 +103,7 @@ public class KafkaAdmin extends KafkaResourceFactory
 
 	private final Map<String, Object> configs;
 
-	private @Nullable ApplicationContext applicationContext;
+	private ApplicationContext applicationContext;
 
 	private Predicate<NewTopic> createOrModifyTopic = nt -> true;
 
@@ -119,7 +119,7 @@ public class KafkaAdmin extends KafkaResourceFactory
 
 	private boolean modifyTopicConfigs;
 
-	private @Nullable String clusterId;
+	private String clusterId;
 
 	/**
 	 * Create an instance with an {@link Admin} based on the supplied
@@ -228,7 +228,7 @@ public class KafkaAdmin extends KafkaResourceFactory
 	 * @return the cluster id.
 	 * @since 3.1.8
 	 */
-	public @Nullable String getClusterId() {
+	public String getClusterId() {
 		return this.clusterId;
 	}
 
@@ -322,28 +322,41 @@ public class KafkaAdmin extends KafkaResourceFactory
 	 * @see #setCreateOrModifyTopic(Predicate)
 	 */
 	protected Collection<NewTopic> newTopics() {
-		Assert.state(this.applicationContext != null, "'applicationContext' cannot be null");
+		Map<String, NewTopic> newTopicsMap = new HashMap<>(
+				this.applicationContext.getBeansOfType(NewTopic.class, false, false));
+		Map<String, NewTopics> wrappers = this.applicationContext.getBeansOfType(NewTopics.class, false, false);
+		AtomicInteger count = new AtomicInteger();
+		wrappers.forEach((name, newTopics) -> {
+			newTopics.getNewTopics().forEach(nt -> newTopicsMap.put(name + "#" + count.getAndIncrement(), nt));
+		});
+		Map<String, NewTopic> topicsForRetry = newTopicsMap.entrySet().stream()
+				.filter(entry -> entry.getValue() instanceof TopicForRetryable)
+				.collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+		for (Entry<String, NewTopic> entry : topicsForRetry.entrySet()) {
+			Iterator<Entry<String, NewTopic>> iterator = newTopicsMap.entrySet().iterator();
+			boolean remove = false;
+			while (iterator.hasNext()) {
+				Entry<String, NewTopic> nt = iterator.next();
+				// if we have a NewTopic and TopicForRetry with the same name, remove the latter
+				if (nt.getValue().name().equals(entry.getValue().name())
+						&& !(nt.getValue() instanceof TopicForRetryable)) {
 
-		// Deal with List<NewTopic> directly instead of Map (no need for bean names)
-		List<NewTopic> newTopicsList = new ArrayList<>(
-				this.applicationContext.getBeansOfType(NewTopic.class, false, false).values());
-
-		// Add topics from NewTopics wrappers (no need for bean names either)
-		this.applicationContext.getBeansOfType(NewTopics.class, false, false).values()
-				.forEach(wrapper -> newTopicsList.addAll(wrapper.getNewTopics()));
-
-		// Collect regular topic names to check against TopicForRetryable
-		Set<String> regularTopicNames = newTopicsList.stream()
-				.filter(nt -> !(nt instanceof TopicForRetryable))
-				.map(NewTopic::name)
-				.collect(Collectors.toSet());
-
-		// Apply combined filter: remove TopicForRetryable with same name as regular topic OR topics that don't pass predicate
-		newTopicsList.removeIf(nt ->
-				(nt instanceof TopicForRetryable && regularTopicNames.contains(nt.name())) ||
-				!this.createOrModifyTopic.test(nt));
-
-		return newTopicsList;
+					remove = true;
+					break;
+				}
+			}
+			if (remove) {
+				newTopicsMap.remove(entry.getKey());
+			}
+		}
+		Iterator<Entry<String, NewTopic>> iterator = newTopicsMap.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Entry<String, NewTopic> next = iterator.next();
+			if (!this.createOrModifyTopic.test(next.getValue())) {
+				iterator.remove();
+			}
+		}
+		return new ArrayList<>(newTopicsMap.values());
 	}
 
 	@Override
@@ -389,35 +402,6 @@ public class KafkaAdmin extends KafkaResourceFactory
 			catch (TimeoutException | ExecutionException ex) {
 				throw new KafkaException("Failed to obtain topic descriptions", ex);
 			}
-		}
-	}
-
-	/**
-	 * Delete topics from the Kafka cluster.
-	 * @param topicNames the topic names to delete.
-	 * @throws KafkaException if the operation fails.
-	 * @since 4.0
-	 */
-	@Override
-	public void deleteTopics(String... topicNames) {
-		if (topicNames.length == 0) {
-			return;
-		}
-		try (Admin admin = createAdmin()) {
-			admin.deleteTopics(Arrays.asList(topicNames))
-					.all()
-					.get(this.operationTimeout, TimeUnit.SECONDS);
-			LOGGER.debug(() -> "Deleted topics: " + Arrays.toString(topicNames));
-		}
-		catch (InterruptedException ex) {
-			Thread.currentThread().interrupt();
-			throw new KafkaException("Interrupted while deleting topics", ex);
-		}
-		catch (TimeoutException ex) {
-			throw new KafkaException("Timed out waiting to delete topics", ex);
-		}
-		catch (ExecutionException ex) {
-			throw new KafkaException("Failed to delete topics", ex.getCause());
 		}
 	}
 
@@ -567,20 +551,18 @@ public class KafkaAdmin extends KafkaResourceFactory
 		topicInfo.topicNameValues().forEach((n, f) -> {
 			NewTopic topic = topicNameToTopic.get(n);
 			try {
-				if (topic != null) {
-					TopicDescription topicDescription = f.get(this.operationTimeout, TimeUnit.SECONDS);
-					if (topic.numPartitions() >= 0 && topic.numPartitions() < topicDescription.partitions().size()) {
-						LOGGER.info(() -> String.format(
-								"Topic '%s' exists but has a different partition count: %d not %d", n,
-								topicDescription.partitions().size(), topic.numPartitions()));
-					}
-					else if (topic.numPartitions() > topicDescription.partitions().size()) {
-						LOGGER.info(() -> String.format(
-								"Topic '%s' exists but has a different partition count: %d not %d, increasing "
-										+ "if the broker supports it", n,
-								topicDescription.partitions().size(), topic.numPartitions()));
-						topicsToModify.put(n, NewPartitions.increaseTo(topic.numPartitions()));
-					}
+				TopicDescription topicDescription = f.get(this.operationTimeout, TimeUnit.SECONDS);
+				if (topic.numPartitions() >= 0 && topic.numPartitions() < topicDescription.partitions().size()) {
+					LOGGER.info(() -> String.format(
+						"Topic '%s' exists but has a different partition count: %d not %d", n,
+						topicDescription.partitions().size(), topic.numPartitions()));
+				}
+				else if (topic.numPartitions() > topicDescription.partitions().size()) {
+					LOGGER.info(() -> String.format(
+						"Topic '%s' exists but has a different partition count: %d not %d, increasing "
+						+ "if the broker supports it", n,
+						topicDescription.partitions().size(), topic.numPartitions()));
+					topicsToModify.put(n, NewPartitions.increaseTo(topic.numPartitions()));
 				}
 			}
 			catch (@SuppressWarnings("unused") InterruptedException e) {
@@ -613,7 +595,7 @@ public class KafkaAdmin extends KafkaResourceFactory
 				LOGGER.debug(e.getCause(), "Failed to create topics");
 			}
 			else {
-				LOGGER.error(e.getCause() != null ? e.getCause() : e, "Failed to create topics");
+				LOGGER.error(e.getCause(), "Failed to create topics");
 				throw new KafkaException("Failed to create topics", e.getCause()); // NOSONAR
 			}
 		}
@@ -636,7 +618,7 @@ public class KafkaAdmin extends KafkaResourceFactory
 				LOGGER.debug(e.getCause(), "Failed to create partitions");
 			}
 			else {
-				LOGGER.error(e.getCause() != null ? e.getCause() : e, "Failed to create partitions");
+				LOGGER.error(e.getCause(), "Failed to create partitions");
 				if (!(e.getCause() instanceof UnsupportedVersionException)) {
 					throw new KafkaException("Failed to create partitions", e.getCause()); // NOSONAR
 				}

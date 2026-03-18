@@ -23,7 +23,6 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.kafka.common.header.Headers;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.util.Assert;
@@ -40,11 +39,7 @@ import org.springframework.util.PatternMatchUtils;
  * @author Gary Russell
  *
  * @since 2.1
- *
- * @deprecated since 4.0 in favor of {@link DefaultJacksonJavaTypeMapper} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
-@SuppressWarnings("removal")
 public class DefaultJackson2JavaTypeMapper extends AbstractJavaTypeMapper
 		implements Jackson2JavaTypeMapper {
 
@@ -94,7 +89,7 @@ public class DefaultJackson2JavaTypeMapper extends AbstractJavaTypeMapper
 	}
 
 	@Override
-	public @Nullable JavaType toJavaType(Headers headers) {
+	public JavaType toJavaType(Headers headers) {
 		String typeIdHeader = retrieveHeaderAsString(headers, getClassIdFieldName());
 
 		if (typeIdHeader != null) {
@@ -186,9 +181,8 @@ public class DefaultJackson2JavaTypeMapper extends AbstractJavaTypeMapper
 	}
 
 	@Override
-	public @Nullable Class<?> toClass(Headers headers) {
-		JavaType javaType = toJavaType(headers);
-		return javaType == null ? null : javaType.getRawClass();
+	public Class<?> toClass(Headers headers) {
+		return toJavaType(headers).getRawClass();
 	}
 
 	@Override

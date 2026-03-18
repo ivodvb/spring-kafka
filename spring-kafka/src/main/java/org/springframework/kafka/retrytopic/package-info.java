@@ -1,5 +1,6 @@
 /**
  * Package for retryable topic handling.
  */
-@org.jspecify.annotations.NullMarked
+@org.springframework.lang.NonNullApi
+@org.springframework.lang.NonNullFields
 package org.springframework.kafka.retrytopic;

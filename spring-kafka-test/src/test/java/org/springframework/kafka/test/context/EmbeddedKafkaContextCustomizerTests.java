@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.context.ConfigurableApplicationContext;
@@ -69,7 +68,6 @@ public class EmbeddedKafkaContextCustomizerTests {
 	}
 
 	@Test
-	@Disabled("Static port assignment not supported in kraft mode when using EmbeddedKafka")
 	void testPorts() {
 		EmbeddedKafka annotationWithPorts =
 				AnnotationUtils.findAnnotation(TestWithEmbeddedKafkaPorts.class, EmbeddedKafka.class);
@@ -79,10 +77,8 @@ public class EmbeddedKafkaContextCustomizerTests {
 		context.refresh();
 
 		EmbeddedKafkaBroker embeddedKafkaBroker = context.getBean(EmbeddedKafkaBroker.class);
-
-		//TODO: We cannot assign ports in kraft mode yet.
 		assertThat(embeddedKafkaBroker.getBrokersAsString())
-				.isEqualTo("localhost:" + annotationWithPorts.ports()[0]);
+				.isEqualTo("127.0.0.1:" + annotationWithPorts.ports()[0]);
 		assertThat(KafkaTestUtils.getPropertyValue(embeddedKafkaBroker, "brokerListProperty"))
 				.isEqualTo("my.bss.prop");
 		assertThat(KafkaTestUtils.getPropertyValue(embeddedKafkaBroker, "adminTimeout"))
@@ -99,7 +95,7 @@ public class EmbeddedKafkaContextCustomizerTests {
 		context.refresh();
 
 		assertThat(context.getBean(EmbeddedKafkaBroker.class).getBrokersAsString())
-				.matches("localhost:[0-9]+,localhost:[0-9]+");
+				.matches("127.0.0.1:[0-9]+,127.0.0.1:[0-9]+");
 	}
 
 	@Test
@@ -118,27 +114,27 @@ public class EmbeddedKafkaContextCustomizerTests {
 		assertThat(properties.get("transaction.state.log.replication.factor")).isEqualTo("2");
 	}
 
-	@EmbeddedKafka
+	@EmbeddedKafka(kraft = false)
 	private static final class TestWithEmbeddedKafka {
 
 	}
 
-	@EmbeddedKafka
+	@EmbeddedKafka(kraft = false)
 	private static final class SecondTestWithEmbeddedKafka {
 
 	}
 
-	@EmbeddedKafka(ports = 8085, bootstrapServersProperty = "my.bss.prop", adminTimeout = 33)
+	@EmbeddedKafka(kraft = false, ports = 8085, bootstrapServersProperty = "my.bss.prop", adminTimeout = 33)
 	private static final class TestWithEmbeddedKafkaPorts {
 
 	}
 
-	@EmbeddedKafka(count = 2)
+	@EmbeddedKafka(kraft = false, count = 2)
 	private static final class TestWithEmbeddedKafkaMulti {
 
 	}
 
-	@EmbeddedKafka(count = 2)
+	@EmbeddedKafka(kraft = false, count = 2)
 	private static final class TestWithEmbeddedKafkaTransactionFactor {
 
 	}

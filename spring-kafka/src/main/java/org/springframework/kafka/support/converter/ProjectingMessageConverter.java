@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.utils.Bytes;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.ResolvableType;
 import org.springframework.data.projection.MethodInterceptorFactory;
@@ -46,11 +45,7 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  *
  * @since 2.1.1
- *
- * @deprecated since 4.0 in favor of {@link JacksonProjectingMessageConverter} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
-@SuppressWarnings("removal")
 public class ProjectingMessageConverter extends MessagingMessageConverter {
 
 	private final ProjectionFactory projectionFactory;
@@ -104,12 +99,12 @@ public class ProjectingMessageConverter extends MessagingMessageConverter {
 	}
 
 	@Override
-	protected @Nullable Object convertPayload(Message<?> message) {
+	protected Object convertPayload(Message<?> message) {
 		return this.delegate.convertPayload(message);
 	}
 
 	@Override
-	protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, @Nullable Type type) {
+	protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, Type type) {
 		Object value = record.value();
 
 		if (value == null) {

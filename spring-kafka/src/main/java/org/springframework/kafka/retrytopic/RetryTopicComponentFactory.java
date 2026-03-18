@@ -18,8 +18,6 @@ package org.springframework.kafka.retrytopic;
 
 import java.time.Clock;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
@@ -31,6 +29,7 @@ import org.springframework.kafka.listener.KafkaConsumerBackoffManager;
 import org.springframework.kafka.listener.ListenerContainerRegistry;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.listener.adapter.KafkaBackoffAwareMessageListenerAdapter;
+import org.springframework.lang.Nullable;
 
 /**
  * Provide the component instances that will be used with
@@ -44,7 +43,6 @@ import org.springframework.kafka.listener.adapter.KafkaBackoffAwareMessageListen
  */
 public class RetryTopicComponentFactory {
 
-	@SuppressWarnings("this-escape")
 	private final Clock internalRetryTopicClock = createInternalRetryTopicClock();
 
 	/**

@@ -19,8 +19,6 @@ package org.springframework.kafka.support;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.factory.BeanCurrentlyInCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -43,11 +41,11 @@ public class EndpointHandlerMethod {
 
 	private final Object beanOrClass;
 
-	private @Nullable String methodName;
+	private String methodName;
 
-	private @Nullable Object bean;
+	private Object bean;
 
-	private @Nullable Method method;
+	private Method method;
 
 	public EndpointHandlerMethod(Object beanOrClass, String methodName) {
 		Assert.notNull(beanOrClass, () -> "No destination bean or class provided!");

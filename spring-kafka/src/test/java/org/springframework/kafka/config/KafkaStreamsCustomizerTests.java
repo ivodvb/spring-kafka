@@ -32,8 +32,8 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
-import org.apache.kafka.streams.errors.ErrorHandlerContext;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.processor.api.ContextualProcessor;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.StoreBuilder;
@@ -61,7 +61,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  * @author Almog Gavra
  * @author Sanghyeok An
- * @author Soby Chacko
  *
  * @since 2.1.5
  */
@@ -237,9 +236,9 @@ public class KafkaStreamsCustomizerTests {
 		}
 
 		@Override
-		public Response handleError(ErrorHandlerContext context, ConsumerRecord<byte[], byte[]> record,
+		public DeserializationHandlerResponse handle(ProcessorContext context, ConsumerRecord<byte[], byte[]> record,
 				Exception exception) {
-			return Response.fail();
+			return null;
 		}
 
 	}

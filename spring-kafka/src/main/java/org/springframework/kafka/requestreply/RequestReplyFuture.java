@@ -19,7 +19,6 @@ package org.springframework.kafka.requestreply;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.SendResult;
 
@@ -36,7 +35,7 @@ import org.springframework.kafka.support.SendResult;
  */
 public class RequestReplyFuture<K, V, R> extends CompletableFuture<ConsumerRecord<K, R>> {
 
-	private volatile @Nullable CompletableFuture<SendResult<K, V>> sendFuture;
+	private volatile CompletableFuture<SendResult<K, V>> sendFuture;
 
 	protected void setSendFuture(CompletableFuture<SendResult<K, V>> sendFuture) {
 		this.sendFuture = sendFuture;
@@ -46,7 +45,7 @@ public class RequestReplyFuture<K, V, R> extends CompletableFuture<ConsumerRecor
 	 * Return the send future.
 	 * @return the send future.
 	 */
-	public @Nullable CompletableFuture<SendResult<K, V>> getSendFuture() {
+	public CompletableFuture<SendResult<K, V>> getSendFuture() {
 		return this.sendFuture;
 	}
 

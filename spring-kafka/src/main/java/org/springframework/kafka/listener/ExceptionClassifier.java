@@ -23,11 +23,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jspecify.annotations.Nullable;
-
-import org.springframework.kafka.support.ExceptionMatcher;
+import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.kafka.support.converter.ConversionException;
 import org.springframework.kafka.support.serializer.DeserializationException;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
 import org.springframework.util.Assert;
@@ -41,13 +40,13 @@ import org.springframework.util.Assert;
  */
 public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 
-	private ExtendedExceptionMatcher exceptionMatcher;
+	private ExtendedBinaryExceptionClassifier classifier;
 
 	/**
 	 * Construct the instance.
 	 */
 	public ExceptionClassifier() {
-		this.exceptionMatcher = configureDefaultClassifier(true);
+		this.classifier = configureDefaultClassifier(true);
 	}
 
 	/**
@@ -66,8 +65,8 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 							ClassCastException.class);
 	}
 
-	private static ExtendedExceptionMatcher configureDefaultClassifier(boolean defaultClassification) {
-		return new ExtendedExceptionMatcher(defaultFatalExceptionsList().stream()
+	private static ExtendedBinaryExceptionClassifier configureDefaultClassifier(boolean defaultClassification) {
+		return new ExtendedBinaryExceptionClassifier(defaultFatalExceptionsList().stream()
 				.collect(Collectors.toMap(ex -> ex, ex -> false)), defaultClassification);
 	}
 
@@ -82,7 +81,7 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 	 */
 	public void defaultFalse(boolean retainStandardFatal) {
 		if (retainStandardFatal) {
-			this.exceptionMatcher = configureDefaultClassifier(false);
+			this.classifier = configureDefaultClassifier(false);
 		}
 		else {
 			defaultFalse();
@@ -96,15 +95,15 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 	 * @since 2.8.4
 	 */
 	public void defaultFalse() {
-		this.exceptionMatcher = new ExtendedExceptionMatcher(new HashMap<>(), false);
+		this.classifier = new ExtendedBinaryExceptionClassifier(new HashMap<>(), false);
 	}
 
 	/**
-	 * Return the {@link ExceptionMatcher}.
+	 * Return the exception classifier.
 	 * @return the classifier.
 	 */
-	protected ExceptionMatcher getExceptionMatcher() {
-		return this.exceptionMatcher;
+	protected BinaryExceptionClassifier getClassifier() {
+		return this.classifier;
 	}
 
 	/**
@@ -123,11 +122,12 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 	 * When calling this method, the defaults will not be applied.
 	 * @param classifications the classifications.
 	 * @param defaultValue whether to retry non-matching exceptions.
+	 * @see BinaryExceptionClassifier#BinaryExceptionClassifier(Map, boolean)
 	 * @see #addNotRetryableExceptions(Class...)
 	 */
 	public void setClassifications(Map<Class<? extends Throwable>, Boolean> classifications, boolean defaultValue) {
 		Assert.notNull(classifications, "'classifications' + cannot be null");
-		this.exceptionMatcher = new ExtendedExceptionMatcher(classifications, defaultValue);
+		this.classifier = new ExtendedBinaryExceptionClassifier(classifications, defaultValue);
 	}
 
 	/**
@@ -185,7 +185,7 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 		for (Class<? extends Exception> exceptionType : exceptionTypes) {
 			Assert.isTrue(Exception.class.isAssignableFrom(exceptionType),
 					() -> "exceptionType " + exceptionType + " must be an Exception");
-			this.exceptionMatcher.getEntries().put(exceptionType, classified);
+			this.classifier.getClassified().put(exceptionType, classified);
 		}
 	}
 
@@ -210,7 +210,7 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 	 */
 	@Nullable
 	public Boolean removeClassification(Class<? extends Exception> exceptionType) {
-		return this.exceptionMatcher.getEntries().remove(exceptionType);
+		return this.classifier.getClassified().remove(exceptionType);
 	}
 
 	/**
@@ -220,15 +220,16 @@ public abstract class ExceptionClassifier extends KafkaExceptionLogLevelAware {
 	 *
 	 */
 	@SuppressWarnings("serial")
-	private static final class ExtendedExceptionMatcher extends ExceptionMatcher {
+	private static final class ExtendedBinaryExceptionClassifier extends BinaryExceptionClassifier {
 
-		ExtendedExceptionMatcher(Map<Class<? extends Throwable>, Boolean> typeMap, boolean defaultValue) {
-			super(typeMap, defaultValue, true);
+		ExtendedBinaryExceptionClassifier(Map<Class<? extends Throwable>, Boolean> typeMap, boolean defaultValue) {
+			super(typeMap, defaultValue);
+			setTraverseCauses(true);
 		}
 
 		@Override
-		protected Map<Class<? extends Throwable>, Boolean> getEntries() { // NOSONAR worthless override
-			return super.getEntries();
+		protected Map<Class<? extends Throwable>, Boolean> getClassified() { // NOSONAR worthless override
+			return super.getClassified();
 		}
 
 	}

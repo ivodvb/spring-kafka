@@ -24,10 +24,10 @@ import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.LogIfLevelEnabled;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -52,17 +52,17 @@ public class ConsumerProperties {
 	/**
 	 * Topic names.
 	 */
-	private final String @Nullable [] topics;
+	private final String[] topics;
 
 	/**
 	 * Topic pattern.
 	 */
-	private final @Nullable Pattern topicPattern;
+	private final Pattern topicPattern;
 
 	/**
 	 * Topics/partitions/initial offsets.
 	 */
-	private final TopicPartitionOffset @Nullable [] topicPartitions;
+	private final TopicPartitionOffset[] topicPartitions;
 
 	/**
 	 * The max time to block in the consumer waiting for records.
@@ -72,7 +72,7 @@ public class ConsumerProperties {
 	/**
 	 * Override the group id.
 	 */
-	private @Nullable String groupId;
+	private String groupId;
 
 	/**
 	 * Override the client id.
@@ -82,21 +82,21 @@ public class ConsumerProperties {
 	/**
 	 * A user defined {@link ConsumerRebalanceListener} implementation.
 	 */
-	private @Nullable ConsumerRebalanceListener consumerRebalanceListener;
+	private ConsumerRebalanceListener consumerRebalanceListener;
 
-	private @Nullable Duration syncCommitTimeout;
+	private Duration syncCommitTimeout;
 
 	/**
 	 * The commit callback; by default a simple logging callback is used to log
 	 * success at DEBUG level and failures at ERROR level.
 	 */
-	private @Nullable OffsetCommitCallback commitCallback;
+	private OffsetCommitCallback commitCallback;
 
 	/**
 	 * A provider for {@link OffsetAndMetadata}; by default, the provider creates an offset and metadata with
 	 * empty metadata. The provider gives a way to customize the metadata.
 	 */
-	private @Nullable OffsetAndMetadataProvider offsetAndMetadataProvider;
+	private OffsetAndMetadataProvider offsetAndMetadataProvider;
 
 	/**
 	 * Whether or not to call consumer.commitSync() or commitAsync() when the
@@ -108,7 +108,7 @@ public class ConsumerProperties {
 
 	private Properties kafkaConsumerProperties = new Properties();
 
-	private @Nullable Duration authExceptionRetryInterval;
+	private Duration authExceptionRetryInterval;
 
 	private int commitRetries = DEFAULT_COMMIT_RETRIES;
 
@@ -138,7 +138,7 @@ public class ConsumerProperties {
 	 * @param topicPattern the pattern.
 	 * @see org.apache.kafka.clients.CommonClientConfigs#METADATA_MAX_AGE_CONFIG
 	 */
-	public ConsumerProperties(@Nullable Pattern topicPattern) {
+	public ConsumerProperties(Pattern topicPattern) {
 		this.topics = null;
 		this.topicPattern = topicPattern;
 		this.topicPartitions = null;
@@ -160,7 +160,8 @@ public class ConsumerProperties {
 	 * Return the configured topics.
 	 * @return the topics.
 	 */
-	public String @Nullable [] getTopics() {
+	@Nullable
+	public String[] getTopics() {
 		return this.topics != null
 				? Arrays.copyOf(this.topics, this.topics.length)
 				: null;
@@ -180,7 +181,8 @@ public class ConsumerProperties {
 	 * @return the topics/partitions.
 	 * @since 2.5
 	 */
-	public TopicPartitionOffset @Nullable [] getTopicPartitions() {
+	@Nullable
+	public TopicPartitionOffset[] getTopicPartitions() {
 		return this.topicPartitions != null
 				? Arrays.copyOf(this.topicPartitions, this.topicPartitions.length)
 				: null;

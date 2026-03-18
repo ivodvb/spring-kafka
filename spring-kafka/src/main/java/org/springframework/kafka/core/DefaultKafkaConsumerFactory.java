@@ -16,6 +16,7 @@
 
 package org.springframework.kafka.core;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -23,7 +24,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -31,13 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
@@ -45,6 +43,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -76,7 +75,6 @@ import org.springframework.util.StringUtils;
  * @author Yaniv Nahoum
  * @author Sanghyeok An
  * @author Borahm Lee
- * @author Soby Chacko
  */
 public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 		implements ConsumerFactory<K, V>, BeanNameAware, ApplicationContextAware {
@@ -89,15 +87,15 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 
 	private final List<ConsumerPostProcessor<K, V>> postProcessors = new ArrayList<>();
 
-	private @Nullable Supplier<@Nullable Deserializer<K>> keyDeserializerSupplier;
+	private Supplier<Deserializer<K>> keyDeserializerSupplier;
 
-	private @Nullable Supplier<@Nullable Deserializer<V>> valueDeserializerSupplier;
+	private Supplier<Deserializer<V>> valueDeserializerSupplier;
 
 	private String beanName = "not.managed.by.Spring";
 
 	private boolean configureDeserializers = true;
 
-	private @Nullable ApplicationContext applicationContext;
+	private ApplicationContext applicationContext;
 
 	/**
 	 * Construct a factory with the provided configuration.
@@ -149,8 +147,8 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 	 * @since 2.3
 	 */
 	public DefaultKafkaConsumerFactory(Map<String, Object> configs,
-			@Nullable Supplier<@Nullable Deserializer<K>> keyDeserializerSupplier,
-			@Nullable Supplier<@Nullable Deserializer<V>> valueDeserializerSupplier) {
+			@Nullable Supplier<Deserializer<K>> keyDeserializerSupplier,
+			@Nullable Supplier<Deserializer<V>> valueDeserializerSupplier) {
 
 		this(configs, keyDeserializerSupplier, valueDeserializerSupplier, true);
 	}
@@ -167,8 +165,8 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 	 * @since 2.8.7
 	 */
 	public DefaultKafkaConsumerFactory(Map<String, Object> configs,
-			@Nullable Supplier<@Nullable Deserializer<K>> keyDeserializerSupplier,
-			@Nullable Supplier<@Nullable Deserializer<V>> valueDeserializerSupplier, boolean configureDeserializers) {
+			@Nullable Supplier<Deserializer<K>> keyDeserializerSupplier,
+			@Nullable Supplier<Deserializer<V>> valueDeserializerSupplier, boolean configureDeserializers) {
 
 		this.configs = new ConcurrentHashMap<>(configs);
 		this.configureDeserializers = configureDeserializers;
@@ -208,7 +206,7 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 	 * @param keyDeserializerSupplier the supplier.
 	 * @since 2.8
 	 */
-	public void setKeyDeserializerSupplier(@Nullable Supplier<@Nullable Deserializer<K>> keyDeserializerSupplier) {
+	public void setKeyDeserializerSupplier(Supplier<Deserializer<K>> keyDeserializerSupplier) {
 		this.keyDeserializerSupplier = keyDeserializerSupplier;
 	}
 
@@ -219,7 +217,7 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 	 * @param valueDeserializerSupplier the supplier.
 	 * @since 2.8
 	 */
-	public void setValueDeserializerSupplier(@Nullable Supplier<@Nullable Deserializer<V>> valueDeserializerSupplier) {
+	public void setValueDeserializerSupplier(Supplier<Deserializer<V>> valueDeserializerSupplier) {
 		this.valueDeserializerSupplier = valueDeserializerSupplier;
 	}
 
@@ -246,13 +244,13 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 	}
 
 	@Override
-	public @Nullable Deserializer<K> getKeyDeserializer() {
-		return Objects.requireNonNull(this.keyDeserializerSupplier).get();
+	public Deserializer<K> getKeyDeserializer() {
+		return this.keyDeserializerSupplier.get();
 	}
 
 	@Override
-	public @Nullable Deserializer<V> getValueDeserializer() {
-		return Objects.requireNonNull(this.valueDeserializerSupplier).get();
+	public Deserializer<V> getValueDeserializer() {
+		return this.valueDeserializerSupplier.get();
 	}
 
 	/**
@@ -429,11 +427,6 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 
 	protected Consumer<K, V> createKafkaConsumer(Map<String, Object> configProps) {
 		checkBootstrap(configProps);
-		if ("consumer".equals(configProps.get("group.protocol")) &&
-				configProps.containsKey(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG)) {
-			LOGGER.warn("Custom partition assignor ignored with group.protocol=consumer; " +
-					"server-side assignors will be used.");
-		}
 		Consumer<K, V> kafkaConsumer = createRawConsumer(configProps);
 		if (!this.listeners.isEmpty() && !(kafkaConsumer instanceof ExtendedKafkaConsumer)) {
 			LOGGER.warn("The 'ConsumerFactory.Listener' configuration is ignored " +
@@ -499,7 +492,7 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 
 	protected class ExtendedKafkaConsumer extends KafkaConsumer<K, V> {
 
-		private @Nullable String idForListeners;
+		private String idForListeners;
 
 		protected ExtendedKafkaConsumer(Map<String, Object> configProps) {
 			super(configProps, keyDeserializer(configProps), valueDeserializer(configProps));
@@ -524,8 +517,8 @@ public class DefaultKafkaConsumerFactory<K, V> extends KafkaResourceFactory
 		}
 
 		@Override
-		public void close(CloseOptions option) {
-			super.close(option);
+		public void close(Duration timeout) {
+			super.close(timeout);
 			notifyConsumerRemoved();
 		}
 

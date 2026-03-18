@@ -60,12 +60,7 @@ public class HeaderEnricherProcessor<K, V> extends ContextualProcessor<K, V, K, 
 				headerValue = ((String) headerValue).getBytes(StandardCharsets.UTF_8);
 			}
 			else if (!(headerValue instanceof byte[])) {
-				if (headerValue != null) {
-					throw new IllegalStateException("Invalid header value type: " + headerValue.getClass());
-				}
-				else {
-					throw new IllegalStateException("headerValue is null");
-				}
+				throw new IllegalStateException("Invalid header value type: " + headerValue.getClass());
 			}
 			headers.add(new RecordHeader(name, (byte[]) headerValue));
 		});

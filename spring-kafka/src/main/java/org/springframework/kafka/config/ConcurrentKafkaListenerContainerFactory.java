@@ -18,12 +18,9 @@ package org.springframework.kafka.config;
 
 import java.util.Collection;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.TopicPartitionOffset;
-import org.springframework.util.Assert;
 
 /**
  * A {@link KafkaListenerContainerFactory} implementation to build a
@@ -31,10 +28,10 @@ import org.springframework.util.Assert;
  * <p>
  * This should be the default for most users and a good transition paths for those that
  * are used to building such container definitions manually.
- * <p>
+ *
  * This factory is primarily for building containers for {@code KafkaListener} annotated
  * methods but can also be used to create any container.
- * <p>
+ *
  * Only containers for {@code KafkaListener} annotated methods are added to the
  * {@code KafkaListenerEndpointRegistry}.
  *
@@ -49,7 +46,7 @@ import org.springframework.util.Assert;
 public class ConcurrentKafkaListenerContainerFactory<K, V>
 		extends AbstractKafkaListenerContainerFactory<ConcurrentMessageListenerContainer<K, V>, K, V> {
 
-	private @Nullable Integer concurrency;
+	private Integer concurrency;
 
 	/**
 	 * Specify the container concurrency.
@@ -69,7 +66,6 @@ public class ConcurrentKafkaListenerContainerFactory<K, V>
 		}
 		else {
 			Collection<String> topics = endpoint.getTopics();
-			Assert.state(topics != null, "'topics' must not be null");
 			if (!topics.isEmpty()) { // NOSONAR
 				ContainerProperties properties = new ContainerProperties(topics.toArray(new String[0]));
 				return new ConcurrentMessageListenerContainer<>(getConsumerFactory(), properties);

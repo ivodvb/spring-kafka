@@ -26,14 +26,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.utils.Bytes;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.JacksonUtils;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper;
 import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.util.Assert;
 
 /**
@@ -45,10 +44,7 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  * @since 2.3
  *
- * @deprecated since 4.0 in favor of {@link JacksonJsonMessageConverter} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
-@SuppressWarnings("removal")
 public class JsonMessageConverter extends MessagingMessageConverter {
 
 	private static final JavaType OBJECT = TypeFactory.defaultInstance().constructType(Object.class);
@@ -95,13 +91,13 @@ public class JsonMessageConverter extends MessagingMessageConverter {
 	}
 
 	@Override
-	protected @Nullable Object convertPayload(Message<?> message) {
+	protected Object convertPayload(Message<?> message) {
 		throw new UnsupportedOperationException("Select a subclass that creates a ProducerRecord value "
 				+ "corresponding to the configured Kafka Serializer");
 	}
 
 	@Override
-	protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, @Nullable Type type) {
+	protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, Type type) {
 		Object value = record.value();
 		if (record.value() == null) {
 			return KafkaNull.INSTANCE;
@@ -132,9 +128,8 @@ public class JsonMessageConverter extends MessagingMessageConverter {
 		}
 	}
 
-	private JavaType determineJavaType(ConsumerRecord<?, ?> record, @Nullable Type type) {
-		JavaType javaType = this.typeMapper.getTypePrecedence()
-				.equals(org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.INFERRED) && type != null
+	private JavaType determineJavaType(ConsumerRecord<?, ?> record, Type type) {
+		JavaType javaType = this.typeMapper.getTypePrecedence().equals(TypePrecedence.INFERRED) && type != null
 				? TypeFactory.defaultInstance().constructType(type)
 				: this.typeMapper.toJavaType(record.headers());
 		if (javaType == null) { // no headers

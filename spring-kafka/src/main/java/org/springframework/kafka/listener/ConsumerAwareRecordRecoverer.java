@@ -18,7 +18,8 @@ package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * A {@link ConsumerRecordRecoverer} that supports getting a reference to the
@@ -43,6 +44,6 @@ public interface ConsumerAwareRecordRecoverer extends ConsumerRecordRecoverer {
 	 * @param exception the exception.
 	 * @since 2.7
 	 */
-	void accept(ConsumerRecord<?, ?> record, @Nullable Consumer<?, ?> consumer, @Nullable Exception exception);
+	void accept(ConsumerRecord<?, ?> record, @Nullable Consumer<?, ?> consumer, Exception exception);
 
 }

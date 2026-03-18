@@ -18,7 +18,6 @@ package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Listener for handling individual incoming Kafka messages.
@@ -34,7 +33,7 @@ import org.jspecify.annotations.Nullable;
 public interface ConsumerAwareMessageListener<K, V> extends MessageListener<K, V> {
 
 	/**
-	 * Invoked with data from kafka. Containers should never call this since they
+	 * Invoked with data from kafka. Containers should never call this since it they
 	 * will detect we are a consumer aware acknowledging listener.
 	 * @param data the data to be processed.
 	 */
@@ -44,6 +43,6 @@ public interface ConsumerAwareMessageListener<K, V> extends MessageListener<K, V
 	}
 
 	@Override
-	void onMessage(ConsumerRecord<K, V> data, @Nullable Consumer<?, ?> consumer);
+	void onMessage(ConsumerRecord<K, V> data, Consumer<?, ?> consumer);
 
 }

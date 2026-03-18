@@ -24,18 +24,15 @@ import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.streams.CloseOptions;
 import org.apache.kafka.streams.KafkaClientSupplier;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.TopologyConfig;
-import org.apache.kafka.streams.TopologyDescription;
 import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.apache.kafka.streams.processor.StateRestoreListener;
 import org.apache.kafka.streams.processor.internals.DefaultKafkaClientSupplier;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -44,6 +41,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -88,7 +86,6 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 
 	private KafkaClientSupplier clientSupplier = new DefaultKafkaClientSupplier();
 
-	@SuppressWarnings("NullAway.Init")
 	private Properties properties;
 
 	private CleanupConfig cleanupConfig;
@@ -98,12 +95,11 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 
 	private KafkaStreamsCustomizer kafkaStreamsCustomizer = kafkaStreams -> { };
 
-	@SuppressWarnings("NullAway.Init")
 	private KafkaStreams.StateListener stateListener;
 
-	private @Nullable  StateRestoreListener stateRestoreListener;
+	private StateRestoreListener stateRestoreListener;
 
-	private @Nullable StreamsUncaughtExceptionHandler streamsUncaughtExceptionHandler;
+	private StreamsUncaughtExceptionHandler streamsUncaughtExceptionHandler;
 
 	private boolean autoStartup = true;
 
@@ -113,14 +109,12 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 
 	private boolean leaveGroupOnClose = false;
 
-	private @Nullable KafkaStreams kafkaStreams;
+	private KafkaStreams kafkaStreams;
 
 	private volatile boolean running;
 
-	@SuppressWarnings("NullAway.Init")
 	private Topology topology;
 
-	@SuppressWarnings("NullAway.Init")
 	private String beanName;
 
 	/**
@@ -130,7 +124,6 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 	 * {@link StreamsBuilderFactoryBean#setStreamsConfiguration(Properties)}.
 	 * @since 2.1.3.
 	 */
-	@SuppressWarnings("NullAway.Init")
 	public StreamsBuilderFactoryBean() {
 		this.cleanupConfig = new CleanupConfig();
 	}
@@ -222,7 +215,8 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 	 * @return {@link StreamsUncaughtExceptionHandler}
 	 * @since 2.8.4
 	 */
-	public @Nullable StreamsUncaughtExceptionHandler getStreamsUncaughtExceptionHandler() {
+	@Nullable
+	public StreamsUncaughtExceptionHandler getStreamsUncaughtExceptionHandler() {
 		return this.streamsUncaughtExceptionHandler;
 	}
 
@@ -255,6 +249,7 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 	 * @return {@link Topology} object
 	 * @since 2.4.4
 	 */
+	@Nullable
 	public Topology getTopology() {
 		return this.topology;
 	}
@@ -354,7 +349,9 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 	@Override
 	public void stop(Runnable callback) {
 		stop();
-		callback.run();
+		if (callback != null) {
+			callback.run();
+		}
 	}
 
 	@Override
@@ -400,11 +397,9 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 			if (this.running) {
 				try {
 					if (this.kafkaStreams != null) {
-						this.kafkaStreams.close(
-								CloseOptions.timeout(this.closeTimeout)
-										.withGroupMembershipOperation(this.leaveGroupOnClose
-												? CloseOptions.GroupMembershipOperation.LEAVE_GROUP
-												: CloseOptions.GroupMembershipOperation.REMAIN_IN_GROUP)
+						this.kafkaStreams.close(new KafkaStreams.CloseOptions()
+								.timeout(this.closeTimeout)
+								.leaveGroup(this.leaveGroupOnClose)
 						);
 						if (this.cleanupConfig.cleanupOnStop()) {
 							this.kafkaStreams.cleanUp();
@@ -444,8 +439,7 @@ public class StreamsBuilderFactoryBean extends AbstractFactoryBean<StreamsBuilde
 		try {
 			this.topology = getObject().build(this.properties);
 			this.infrastructureCustomizer.configureTopology(this.topology);
-			TopologyDescription description = this.topology.describe();
-			LOGGER.debug(description::toString);
+			LOGGER.debug(() -> this.topology.describe().toString());
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);

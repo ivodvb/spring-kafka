@@ -31,12 +31,11 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.header.Header;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
-import org.springframework.util.ConcurrentLruCache;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
@@ -65,14 +64,6 @@ public abstract class AbstractKafkaHeaderMapper implements KafkaHeaderMapper {
 	protected final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass())); // NOSONAR
 
 	private final List<HeaderMatcher> matchers = new ArrayList<>();
-
-	private final ConcurrentLruCache<String, Boolean> matcherResultCache =
-			new ConcurrentLruCache<>(1000, this::doesMatchInternal);
-
-	private final List<HeaderMatcher> multiValueHeaderMatchers = new ArrayList<>();
-
-	private final ConcurrentLruCache<String, Boolean> multiValueMatcherResultCache =
-			new ConcurrentLruCache<>(1000, this::doesMatchMultiValueHeaderInternal);
 
 	private final Map<String, Boolean> rawMappedHeaders = new HashMap<>();
 
@@ -200,18 +191,6 @@ public abstract class AbstractKafkaHeaderMapper implements KafkaHeaderMapper {
 		this.rawMappedHeaders.put(name, toString);
 	}
 
-	/**
-	 * Add patterns for matching multi-value headers under the same key.
-	 * @param patterns the patterns for header.
-	 * @since 4.0
-	 */
-	public void setMultiValueHeaderPatterns(String ... patterns) {
-		this.multiValueHeaderMatchers.addAll(Arrays
-												.stream(patterns)
-												.map(SimplePatternBasedHeaderMatcher::new)
-												.toList());
-	}
-
 	protected boolean matches(String header, Object value) {
 		if (matches(header)) {
 			if ((header.equals(MessageHeaders.REPLY_CHANNEL) || header.equals(MessageHeaders.ERROR_CHANNEL))
@@ -247,17 +226,13 @@ public abstract class AbstractKafkaHeaderMapper implements KafkaHeaderMapper {
 	}
 
 	private boolean doesMatch(String header) {
-		return this.matcherResultCache.get(header);
-	}
-
-	private boolean doesMatchInternal(String header) {
 		for (HeaderMatcher matcher : this.matchers) {
 			if (matcher.matchHeader(header)) {
 				return !matcher.isNegated();
 			}
 		}
 		this.logger.debug(() -> MessageFormat.format("headerName=[{0}] WILL NOT be mapped; matched no patterns",
-													header));
+				header));
 		return false;
 	}
 
@@ -276,49 +251,6 @@ public abstract class AbstractKafkaHeaderMapper implements KafkaHeaderMapper {
 		return valueToAdd;
 	}
 
-	/**
-	 * Determine whether the given header name should be mapped to multiple values.
-	 * This method first checks if the mapping result is already cached.
-	 * If a cached result exists, it is returned immediately.
-	 * If not, {@code doesMatchInternal(headerName)} is called to compute the result,
-	 * which is then cached and returned.
-	 * @param headerName the header name.
-	 * @return True for multiple values at the same key.
-	 * @since 4.0
-	 */
-	protected boolean doesMatchMultiValueHeader(String headerName) {
-		return this.multiValueMatcherResultCache.get(headerName);
-	}
-
-	private boolean doesMatchMultiValueHeaderInternal(String headerName) {
-		for (HeaderMatcher headerMatcher : this.multiValueHeaderMatchers) {
-			if (headerMatcher.matchHeader(headerName)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Handle non-reserved headers in {@link DefaultKafkaHeaderMapper}.
-	 * @param headerName the header name.
-	 * @param header the header instance.
-	 * @param headers the target headers.
-	 * @since 4.0
-	 */
-	protected void fromUserHeader(String headerName, Header header, final Map<String, Object> headers) {
-		if (!doesMatchMultiValueHeader(headerName)) {
-			headers.put(headerName, headerValueToAddIn(header));
-		}
-		else {
-			@SuppressWarnings("unchecked")
-			List<Object> headerValues = (List<Object>)
-					headers.computeIfAbsent(headerName, key -> new ArrayList<>());
-			headerValues.add(headerValueToAddIn(header));
-		}
-	}
-
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	@Nullable
 	private byte[] mapRawOut(String header, Object value) {
 		if (this.mapAllStringsOut || this.rawMappedHeaders.containsKey(header)) {
@@ -337,7 +269,7 @@ public abstract class AbstractKafkaHeaderMapper implements KafkaHeaderMapper {
 	 * @param header the header.
 	 * @return the value to add.
 	 */
-	protected @Nullable Object headerValueToAddIn(@Nullable Header header) {
+	protected Object headerValueToAddIn(Header header) {
 		if (header == null || header.value() == null) {
 			return null;
 		}

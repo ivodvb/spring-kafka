@@ -18,10 +18,9 @@ package org.springframework.kafka.listener.adapter;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.core.MethodParameter;
 import org.springframework.kafka.support.KafkaNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.annotation.support.PayloadMethodArgumentResolver;
@@ -40,12 +39,12 @@ import org.springframework.validation.Validator;
  */
 public class KafkaNullAwarePayloadArgumentResolver extends PayloadMethodArgumentResolver {
 
-	KafkaNullAwarePayloadArgumentResolver(MessageConverter messageConverter, @Nullable Validator validator) {
+	KafkaNullAwarePayloadArgumentResolver(MessageConverter messageConverter, Validator validator) {
 		super(messageConverter, validator);
 	}
 
 	@Override
-	public @Nullable Object resolveArgument(MethodParameter parameter, Message<?> message) throws Exception { // NOSONAR
+	public Object resolveArgument(MethodParameter parameter, Message<?> message) throws Exception { // NOSONAR
 		Object resolved = super.resolveArgument(parameter, message);
 		/*
 		 * Replace KafkaNull list elements with null.

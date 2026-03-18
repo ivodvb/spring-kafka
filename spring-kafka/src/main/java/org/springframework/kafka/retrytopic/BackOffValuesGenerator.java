@@ -16,19 +16,24 @@
 
 package org.springframework.kafka.retrytopic;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
-import org.jspecify.annotations.Nullable;
-
-import org.springframework.util.backoff.BackOff;
-import org.springframework.util.backoff.BackOffExecution;
-import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.retry.backoff.BackOffContext;
+import org.springframework.retry.backoff.BackOffPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.backoff.NoBackOffPolicy;
+import org.springframework.retry.backoff.Sleeper;
+import org.springframework.retry.backoff.SleepingBackOffPolicy;
+import org.springframework.retry.support.RetrySynchronizationManager;
 
 /**
  *
- * Generates the back off values from the provided maxAttempts value and
- * {@link BackOff}.
+ * Generates the backoff values from the provided maxAttempts value and
+ * {@link BackOffPolicy}.
  *
  * @author Tomaz Fernandes
  * @author Artem Bilan
@@ -39,27 +44,75 @@ import org.springframework.util.backoff.FixedBackOff;
  */
 public class BackOffValuesGenerator {
 
-	private static final BackOff DEFAULT_BACKOFF = new FixedBackOff(1000);
+	private static final BackOffPolicy DEFAULT_BACKOFF_POLICY = new FixedBackOffPolicy();
 
 	private final int numberOfValuesToCreate;
 
-	private final BackOff backOff;
+	private final BackOffPolicy backOffPolicy;
 
-	public BackOffValuesGenerator(int providedMaxAttempts, @Nullable BackOff providedBackOff) {
+	public BackOffValuesGenerator(int providedMaxAttempts, BackOffPolicy providedBackOffPolicy) {
 		this.numberOfValuesToCreate = getMaxAttempts(providedMaxAttempts) - 1;
-		this.backOff = providedBackOff != null ? providedBackOff : DEFAULT_BACKOFF;
+		BackOffPolicy policy = providedBackOffPolicy != null ? providedBackOffPolicy : DEFAULT_BACKOFF_POLICY;
+		checkBackOffPolicyType(policy);
+		this.backOffPolicy = policy;
 	}
 
-	private static int getMaxAttempts(int providedMaxAttempts) {
+	public int getMaxAttempts(int providedMaxAttempts) {
 		return providedMaxAttempts != RetryTopicConstants.NOT_SET
 				? providedMaxAttempts
 				: RetryTopicConstants.DEFAULT_MAX_ATTEMPTS;
 	}
 
 	public List<Long> generateValues() {
-		BackOffExecution backOffExecution = this.backOff.start();
-		return Stream.generate(backOffExecution::nextBackOff).
-				limit(this.numberOfValuesToCreate).toList();
+		return NoBackOffPolicy.class.isAssignableFrom(this.backOffPolicy.getClass())
+				? generateFromNoBackOffPolicy(this.numberOfValuesToCreate)
+				: generateFromSleepingBackOffPolicy(this.numberOfValuesToCreate, this.backOffPolicy);
+	}
+
+	private void checkBackOffPolicyType(BackOffPolicy providedBackOffPolicy) {
+		if (!(SleepingBackOffPolicy.class.isAssignableFrom(providedBackOffPolicy.getClass())
+				|| NoBackOffPolicy.class.isAssignableFrom(providedBackOffPolicy.getClass()))) {
+			throw new IllegalArgumentException("Either a SleepingBackOffPolicy or a NoBackOffPolicy must be provided. " +
+					"Provided BackOffPolicy: " + providedBackOffPolicy.getClass().getSimpleName());
+		}
+	}
+
+	private List<Long> generateFromSleepingBackOffPolicy(int maxAttempts, BackOffPolicy providedBackOffPolicy) {
+		BackoffRetainerSleeper sleeper = new BackoffRetainerSleeper();
+		SleepingBackOffPolicy<?> retainingBackOffPolicy =
+				((SleepingBackOffPolicy<?>) providedBackOffPolicy).withSleeper(sleeper);
+		BackOffContext backOffContext = retainingBackOffPolicy.start(RetrySynchronizationManager.getContext());
+		IntStream.range(0, maxAttempts)
+				.forEach(index -> retainingBackOffPolicy.backOff(backOffContext));
+
+		return sleeper.getBackoffValues();
+	}
+
+	private List<Long> generateFromNoBackOffPolicy(int maxAttempts) {
+		return LongStream
+				.range(0, maxAttempts)
+				.mapToObj(index -> 0L)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * This class is injected in the backoff policy to gather and hold the generated backoff values.
+	 */
+	private static final class BackoffRetainerSleeper implements Sleeper {
+
+		private static final long serialVersionUID = 1L;
+
+		private final transient List<Long> backoffValues = new ArrayList<>();
+
+		@Override
+		public void sleep(long backOffPeriod) {
+			this.backoffValues.add(backOffPeriod);
+		}
+
+		public List<Long> getBackoffValues() {
+			return this.backoffValues;
+		}
+
 	}
 
 }

@@ -22,7 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.util.Assert;
 
@@ -75,7 +74,7 @@ public class CompositeProducerListener<K, V> implements ProducerListener<K, V> {
 	}
 
 	@Override
-	public void onError(ProducerRecord<K, V> producerRecord, @Nullable RecordMetadata recordMetadata, Exception exception) {
+	public void onError(ProducerRecord<K, V> producerRecord, RecordMetadata recordMetadata, Exception exception) {
 		this.delegates.forEach(d -> d.onError(producerRecord, recordMetadata, exception));
 	}
 

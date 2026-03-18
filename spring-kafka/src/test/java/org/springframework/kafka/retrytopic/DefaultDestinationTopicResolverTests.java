@@ -286,7 +286,7 @@ class DefaultDestinationTopicResolverTests extends DestinationTopicTests {
 	}
 
 	@Test
-	void shouldNotMarkContainerRefreshedOnOtherContextRefresh() {
+	void shouldNotMarkContainerRefeshedOnOtherContextRefresh() {
 		defaultDestinationTopicContainer
 				.onApplicationEvent(new ContextRefreshedEvent(otherApplicationContext));
 		assertThat(defaultDestinationTopicContainer.isContextRefreshed()).isFalse();

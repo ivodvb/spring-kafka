@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
@@ -37,6 +35,7 @@ import org.springframework.kafka.listener.KafkaConsumerBackoffManager;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.listener.adapter.KafkaBackoffAwareMessageListenerAdapter;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.backoff.BackOff;
 
@@ -62,14 +61,15 @@ public class ListenerContainerFactoryConfigurer {
 	@Nullable
 	private BackOff providedBlockingBackOff;
 
-	private Class<? extends Exception> @Nullable [] blockingExceptionTypes;
+	@Nullable
+	private Class<? extends Exception>[] blockingExceptionTypes;
 
 	private boolean retainStandardFatal;
 
 	private Consumer<ConcurrentMessageListenerContainer<?, ?>> containerCustomizer = container -> {
 	};
 
-	private @Nullable Consumer<DefaultErrorHandler> errorHandlerCustomizer = errorHandler -> {
+	private Consumer<DefaultErrorHandler> errorHandlerCustomizer = errorHandler -> {
 	};
 
 	private final DeadLetterPublishingRecovererFactory deadLetterPublishingRecovererFactory;
@@ -130,7 +130,7 @@ public class ListenerContainerFactoryConfigurer {
 	 * @since 2.8.4
 	 * @see DefaultErrorHandler
 	 */
-	public void setBlockingRetriesBackOff(@Nullable BackOff blockingBackOff) {
+	public void setBlockingRetriesBackOff(BackOff blockingBackOff) {
 		Assert.notNull(blockingBackOff, "The provided BackOff cannot be null");
 		Assert.state(this.providedBlockingBackOff == null, () ->
 				"Blocking retries back off has already been set. Current: "
@@ -167,12 +167,12 @@ public class ListenerContainerFactoryConfigurer {
 		this.retainStandardFatal = retainStandardFatal;
 	}
 
-	public void setContainerCustomizer(@Nullable Consumer<ConcurrentMessageListenerContainer<?, ?>> containerCustomizer) {
+	public void setContainerCustomizer(Consumer<ConcurrentMessageListenerContainer<?, ?>> containerCustomizer) {
 		Assert.notNull(containerCustomizer, "'containerCustomizer' cannot be null");
 		this.containerCustomizer = containerCustomizer;
 	}
 
-	public void setErrorHandlerCustomizer(@Nullable Consumer<DefaultErrorHandler> errorHandlerCustomizer) {
+	public void setErrorHandlerCustomizer(Consumer<DefaultErrorHandler> errorHandlerCustomizer) {
 		this.errorHandlerCustomizer = errorHandlerCustomizer;
 	}
 
@@ -184,9 +184,7 @@ public class ListenerContainerFactoryConfigurer {
 		if (this.blockingExceptionTypes != null) {
 			errorHandler.addRetryableExceptions(this.blockingExceptionTypes);
 		}
-		if (this.errorHandlerCustomizer != null) {
-			this.errorHandlerCustomizer.accept(errorHandler);
-		}
+		this.errorHandlerCustomizer.accept(errorHandler);
 		return errorHandler;
 	}
 
@@ -207,8 +205,7 @@ public class ListenerContainerFactoryConfigurer {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> T checkAndCast(@Nullable Object obj, Class<T> clazz) {
-		Assert.state(obj != null, "Object cannot be null");
+	private <T> T checkAndCast(Object obj, Class<T> clazz) {
 		Assert.isAssignable(clazz, obj.getClass(),
 				() -> String.format("The provided class %s is not assignable from %s",
 						obj.getClass().getSimpleName(), clazz.getSimpleName()));

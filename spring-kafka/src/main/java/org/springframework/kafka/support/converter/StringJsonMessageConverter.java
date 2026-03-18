@@ -18,7 +18,6 @@ package org.springframework.kafka.support.converter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.messaging.Message;
@@ -34,11 +33,7 @@ import org.springframework.messaging.Message;
  * @author Artem Bilan
  * @author Dariusz Szablinski
  * @author Vladimir Loginov
- *
- * @deprecated since 4.0 in favor of {@link StringJacksonJsonMessageConverter} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
-@SuppressWarnings("removal")
 public class StringJsonMessageConverter extends JsonMessageConverter {
 
 	public StringJsonMessageConverter() {
@@ -49,7 +44,7 @@ public class StringJsonMessageConverter extends JsonMessageConverter {
 	}
 
 	@Override
-	protected @Nullable Object convertPayload(Message<?> message) {
+	protected Object convertPayload(Message<?> message) {
 		try {
 			return message.getPayload() instanceof KafkaNull
 					? null

@@ -37,9 +37,14 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.ResolvableType;
+import org.springframework.kafka.support.JacksonUtils;
+import org.springframework.kafka.support.mapping.AbstractJavaTypeMapper;
+import org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -62,11 +67,7 @@ import org.springframework.util.StringUtils;
  * @author Torsten Schleede
  * @author Ivan Ponomarev
  * @author Omer Celik
- *
- * @deprecated since 4.0 in favor of {@link JacksonJsonDeserializer} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
-@SuppressWarnings("removal")
 public class JsonDeserializer<T> implements Deserializer<T> {
 
 	/**
@@ -128,12 +129,11 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 
 	protected final ObjectMapper objectMapper; // NOSONAR
 
-	protected @Nullable JavaType targetType; // NOSONAR
+	protected JavaType targetType; // NOSONAR
 
-	protected org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper typeMapper =
-			new org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper(); // NOSONAR
+	protected Jackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper(); // NOSONAR
 
-	private @Nullable ObjectReader reader;
+	private ObjectReader reader;
 
 	private boolean typeMapperExplicitlySet = false;
 
@@ -141,7 +141,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 
 	private boolean useTypeHeaders = true;
 
-	private @Nullable JsonTypeResolver typeResolver;
+	private JsonTypeResolver typeResolver;
 
 	private boolean setterCalled;
 
@@ -200,7 +200,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * @since 2.2
 	 */
 	public JsonDeserializer(@Nullable Class<? super T> targetType, boolean useHeadersIfPresent) {
-		this(targetType, org.springframework.kafka.support.JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
+		this(targetType, JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
 	}
 
 	/**
@@ -211,8 +211,8 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * type if not.
 	 * @since 2.3
 	 */
-	public JsonDeserializer(@Nullable TypeReference<? super T> targetType, boolean useHeadersIfPresent) {
-		this(targetType, org.springframework.kafka.support.JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
+	public JsonDeserializer(TypeReference<? super T> targetType, boolean useHeadersIfPresent) {
+		this(targetType, JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
 	}
 
 	/**
@@ -223,8 +223,8 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * type if not.
 	 * @since 2.3
 	 */
-	public JsonDeserializer(@Nullable JavaType targetType, boolean useHeadersIfPresent) {
-		this(targetType, org.springframework.kafka.support.JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
+	public JsonDeserializer(JavaType targetType, boolean useHeadersIfPresent) {
+		this(targetType, JacksonUtils.enhancedObjectMapper(), useHeadersIfPresent);
 	}
 
 	/**
@@ -250,7 +250,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * @param targetType the target java type to use if no type info headers are present.
 	 * @param objectMapper the mapper. type if not.
 	 */
-	public JsonDeserializer(@Nullable JavaType targetType, ObjectMapper objectMapper) {
+	public JsonDeserializer(JavaType targetType, ObjectMapper objectMapper) {
 		this(targetType, objectMapper, true);
 	}
 
@@ -291,7 +291,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * type if not.
 	 * @since 2.3
 	 */
-	public JsonDeserializer(@Nullable TypeReference<? super T> targetType, ObjectMapper objectMapper,
+	public JsonDeserializer(TypeReference<? super T> targetType, ObjectMapper objectMapper,
 			boolean useHeadersIfPresent) {
 
 		this(targetType != null ? TypeFactory.defaultInstance().constructType(targetType) : null,
@@ -315,22 +315,22 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		initialize(targetType, useHeadersIfPresent);
 	}
 
-	public org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper getTypeMapper() {
+	public Jackson2JavaTypeMapper getTypeMapper() {
 		return this.typeMapper;
 	}
 
 	/**
-	 * Set a customized type mapper. If the mapper is an {@link org.springframework.kafka.support.mapping.AbstractJavaTypeMapper},
+	 * Set a customized type mapper. If the mapper is an {@link AbstractJavaTypeMapper},
 	 * any class mappings configured in the mapper will be added to the trusted packages.
 	 * @param typeMapper the type mapper.
 	 * @since 2.1
 	 */
-	public void setTypeMapper(org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper typeMapper) {
+	public void setTypeMapper(Jackson2JavaTypeMapper typeMapper) {
 		Assert.notNull(typeMapper, "'typeMapper' cannot be null");
 		this.typeMapper = typeMapper;
 		this.typeMapperExplicitlySet = true;
-		if (typeMapper instanceof org.springframework.kafka.support.mapping.AbstractJavaTypeMapper typeMapperToUse) {
-			addMappingsToTrusted(typeMapperToUse.getIdClassMapping());
+		if (typeMapper instanceof AbstractJavaTypeMapper) {
+			addMappingsToTrusted(((AbstractJavaTypeMapper) typeMapper).getIdClassMapping());
 		}
 		this.setterCalled = true;
 	}
@@ -347,8 +347,8 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 
 	private void doSetUseTypeMapperForKey(boolean isKey) {
 		if (!this.typeMapperExplicitlySet
-				&& this.getTypeMapper() instanceof org.springframework.kafka.support.mapping.AbstractJavaTypeMapper typeMapperToUse) {
-			typeMapperToUse.setUseForKey(isKey);
+				&& this.getTypeMapper() instanceof AbstractJavaTypeMapper) {
+			((AbstractJavaTypeMapper) this.getTypeMapper()).setUseForKey(isKey);
 		}
 	}
 
@@ -419,8 +419,8 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 						StringUtils.delimitedListToStringArray((String) configs.get(TRUSTED_PACKAGES), ",", " \r\n\f\t"));
 			}
 			if (configs.containsKey(TYPE_MAPPINGS) && !this.typeMapperExplicitlySet
-					&& this.typeMapper instanceof org.springframework.kafka.support.mapping.AbstractJavaTypeMapper typeMapperToUse) {
-				typeMapperToUse.setIdClassMapping(createMappings(configs));
+					&& this.typeMapper instanceof AbstractJavaTypeMapper) {
+				((AbstractJavaTypeMapper) this.typeMapper).setIdClassMapping(createMappings(configs));
 			}
 			if (configs.containsKey(REMOVE_TYPE_INFO_HEADERS)) {
 				this.removeTypeHeaders = Boolean.parseBoolean(configs.get(REMOVE_TYPE_INFO_HEADERS).toString());
@@ -442,7 +442,6 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		return false;
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	private Map<String, Class<?>> createMappings(Map<String, ?> configs) {
 		Map<String, Class<?>> mappings =
 				JsonSerializer.createMappings(configs.get(JsonSerializer.TYPE_MAPPINGS).toString());
@@ -466,8 +465,8 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		catch (IllegalStateException e) {
 			if (e.getCause() instanceof NoSuchMethodException) {
 				this.typeResolver = (topic, data, headers) ->
-						(JavaType) SerializationUtils.propertyToMethodInvokingFunction(
-								method, byte[].class, getClass().getClassLoader()).apply(data, headers);
+					(JavaType) SerializationUtils.propertyToMethodInvokingFunction(
+							method, byte[].class, getClass().getClassLoader()).apply(data, headers);
 				return;
 			}
 			throw e;
@@ -479,10 +478,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 			if (configs.containsKey(USE_TYPE_INFO_HEADERS)) {
 				this.useTypeHeaders = Boolean.parseBoolean(configs.get(USE_TYPE_INFO_HEADERS).toString());
 			}
-			this.typeMapper.setTypePrecedence(
-					this.useTypeHeaders
-							? org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-							: org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
+			this.typeMapper.setTypePrecedence(this.useTypeHeaders ? TypePrecedence.TYPE_ID : TypePrecedence.INFERRED);
 		}
 	}
 
@@ -497,9 +493,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 			}
 
 			if (javaType != null) {
-				initialize(javaType,
-						org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-								.equals(this.typeMapper.getTypePrecedence()));
+				initialize(javaType, TypePrecedence.TYPE_ID.equals(this.typeMapper.getTypePrecedence()));
 			}
 		}
 		catch (ClassNotFoundException | LinkageError e) {
@@ -518,10 +512,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		}
 
 		addTargetPackageToTrusted();
-		this.typeMapper.setTypePrecedence(
-				useHeadersIfPresent
-						? org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-						: org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
+		this.typeMapper.setTypePrecedence(useHeadersIfPresent ? TypePrecedence.TYPE_ID : TypePrecedence.INFERRED);
 	}
 
 	private JavaType setupTargetType(Map<String, ?> configs, String key) throws ClassNotFoundException, LinkageError {
@@ -530,7 +521,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		}
 		else if (configs.get(key) instanceof String) {
 			return TypeFactory.defaultInstance()
-					.constructType(ClassUtils.forName((String) configs.get(key), null));
+							.constructType(ClassUtils.forName((String) configs.get(key), null));
 		}
 		else {
 			throw new IllegalStateException(key + " must be Class or String");
@@ -571,7 +562,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		}
 	}
 
-	private @Nullable String getTargetPackageName() {
+	private String getTargetPackageName() {
 		if (this.targetType != null) {
 			return ClassUtils.getPackageName(this.targetType.getRawClass()).replaceFirst("\\[L", "");
 		}
@@ -583,7 +574,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	}
 
 	@Override
-	public @Nullable T deserialize(String topic, Headers headers, byte[] data) {
+	public T deserialize(String topic, Headers headers, byte[] data) {
 		if (data == null) {
 			return null;
 		}
@@ -592,9 +583,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 		if (this.typeResolver != null) {
 			javaType = this.typeResolver.resolveType(topic, data, headers);
 		}
-		if (javaType == null && this.typeMapper.getTypePrecedence()
-				.equals(org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID)) {
-
+		if (javaType == null && this.typeMapper.getTypePrecedence().equals(TypePrecedence.TYPE_ID)) {
 			javaType = this.typeMapper.toJavaType(headers);
 		}
 		if (javaType != null) {
@@ -611,12 +600,12 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 			return deserReader.readValue(data);
 		}
 		catch (IOException ex) {
-			throw new SerializationException("Can't deserialize data from topic [" + topic + "]", ex);
+			throw new SerializationException("Can't deserialize data  from topic [" + topic + "]", ex);
 		}
 	}
 
 	@Override
-	public @Nullable T deserialize(String topic, byte[] data) {
+	public T deserialize(String topic, @Nullable byte[] data) {
 		if (data == null) {
 			return null;
 		}
@@ -715,13 +704,13 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	}
 
 	/**
-	 * Use the supplied {@link org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper}.
+	 * Use the supplied {@link Jackson2JavaTypeMapper}.
 	 * @param mapper the mapper.
 	 * @return the deserializer.
 	 * @since 2.3
-	 * @see #setTypeMapper(org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper)
+	 * @see #setTypeMapper(Jackson2JavaTypeMapper)
 	 */
-	public JsonDeserializer<T> typeMapper(org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper mapper) {
+	public JsonDeserializer<T> typeMapper(Jackson2JavaTypeMapper mapper) {
 		setTypeMapper(mapper);
 		return this;
 	}
@@ -730,7 +719,7 @@ public class JsonDeserializer<T> implements Deserializer<T> {
 	 * Add trusted packages to the default type mapper.
 	 * @param packages the packages.
 	 * @return the deserializer.
-	 * @since 2, 5
+	 * @since 2,5
 	 */
 	public JsonDeserializer<T> trustedPackages(String... packages) {
 		try {

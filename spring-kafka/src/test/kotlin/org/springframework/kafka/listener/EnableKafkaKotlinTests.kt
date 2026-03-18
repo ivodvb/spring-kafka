@@ -32,7 +32,7 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.*
-import org.springframework.kafka.support.converter.JacksonJsonMessageConverter
+import org.springframework.kafka.support.converter.JsonMessageConverter
 import org.springframework.kafka.test.EmbeddedKafkaBroker
 import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.test.annotation.DirtiesContext
@@ -168,9 +168,9 @@ class EnableKafkaKotlinTests {
 		fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> {
 			val factory: ConcurrentKafkaListenerContainerFactory<String, String>
 				= ConcurrentKafkaListenerContainerFactory()
-			factory.setConsumerFactory(kcf())
+			factory.consumerFactory = kcf()
 			factory.setCommonErrorHandler(eh)
-			factory.setRecordMessageConverter(JacksonJsonMessageConverter())
+			factory.setRecordMessageConverter(JsonMessageConverter())
 			return factory
 		}
 
@@ -178,8 +178,8 @@ class EnableKafkaKotlinTests {
 		fun kafkaBatchListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> {
 			val factory: ConcurrentKafkaListenerContainerFactory<String, String>
 					= ConcurrentKafkaListenerContainerFactory()
-			factory.setBatchListener(true)
-			factory.setConsumerFactory(kcf())
+			factory.isBatchListener = true
+			factory.consumerFactory = kcf()
 			factory.setCommonErrorHandler(eh)
 			return factory
 		}
@@ -203,12 +203,12 @@ class EnableKafkaKotlinTests {
 				ConcurrentMessageListenerContainer<String, String> {
 
 			val container = kafkaListenerContainerFactory.createContainer("kotlinTestTopic2")
-			container.containerProperties.setGroupId("checkedEx")
-			container.containerProperties.setMessageListener(MessageListener<String, String> {
+			container.containerProperties.groupId = "checkedEx"
+			container.containerProperties.messageListener = MessageListener<String, String> {
 				if (it.value() == "fail") {
 					throw Exception("checked")
 				}
-			})
+			}
 			return container;
 		}
 
@@ -218,12 +218,12 @@ class EnableKafkaKotlinTests {
 				ConcurrentMessageListenerContainer<String, String> {
 
 			val container = kafkaBatchListenerContainerFactory.createContainer("kotlinBatchTestTopic2")
-			container.containerProperties.setGroupId("batchCheckedEx")
-			container.containerProperties.setMessageListener(BatchMessageListener<String, String> {
+			container.containerProperties.groupId = "batchCheckedEx"
+			container.containerProperties.messageListener = BatchMessageListener<String, String> {
 				if (it.first().value() == "fail") {
 					throw Exception("checked")
 				}
-			})
+			}
 			return container;
 		}
 

@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -54,6 +53,7 @@ import org.springframework.kafka.listener.ListenerContainerPauseService;
 import org.springframework.kafka.listener.ListenerContainerRegistry;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.JavaUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.backoff.BackOff;
@@ -75,12 +75,10 @@ import org.springframework.util.backoff.FixedBackOff;
 */
 public class RetryTopicConfigurationSupport implements ApplicationContextAware, SmartInitializingSingleton {
 
-	@SuppressWarnings("this-escape")
 	private final RetryTopicComponentFactory componentFactory = createComponentFactory();
 
 	private final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass()));
 
-	@SuppressWarnings("NullAway.Init")
 	private ApplicationContext applicationContext;
 
 	@Override
@@ -351,7 +349,7 @@ public class RetryTopicConfigurationSupport implements ApplicationContextAware, 
 		@Nullable
 		private BackOff backOff;
 
-		@SuppressWarnings("NullAway.Init")
+		@Nullable
 		private Class<? extends Exception>[] retryableExceptions;
 
 		/**
@@ -373,12 +371,12 @@ public class RetryTopicConfigurationSupport implements ApplicationContextAware, 
 		 * is configured. Note that this only has any effect for exceptions specified
 		 * with the {@link #retryOn} method - by default blocking retries are disabled
 		 * when using the non-blocking retries feature.
-		 * @param backOff the {@link BackOff} instance.
+		 * @param backoff the {@link BackOff} instance.
 		 * @return the configurer.
 		 * @see DefaultErrorHandler
 		 */
-		public BlockingRetriesConfigurer backOff(BackOff backOff) {
-			this.backOff = backOff;
+		public BlockingRetriesConfigurer backOff(BackOff backoff) {
+			this.backOff = backoff;
 			return this;
 		}
 
@@ -387,6 +385,7 @@ public class RetryTopicConfigurationSupport implements ApplicationContextAware, 
 			return this.backOff;
 		}
 
+		@Nullable
 		Class<? extends Exception>[] getRetryableExceptions() {
 			return this.retryableExceptions;
 		}

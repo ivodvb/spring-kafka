@@ -598,9 +598,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		@KafkaHandler
 		public Mono<Void> listen(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic) {
@@ -630,9 +630,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		private CountDownLatch firstRetryFailMsgLatch = new CountDownLatch(1);
 
@@ -687,9 +687,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		protected final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		private CountDownLatch firstRetryFailMsgLatch = new CountDownLatch(1);
 
@@ -746,9 +746,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		protected final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String FAIL_PREFIX = "fail";
 
@@ -811,9 +811,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		protected final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String LONG_SUCCESS_MSG = "success";
 
@@ -877,9 +877,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		protected final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String LONG_SUCCESS_MSG = "success";
 
@@ -943,9 +943,9 @@ public class AsyncMonoRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		protected final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String SUCCESS_PREFIX = "success";
 
@@ -1076,7 +1076,7 @@ public class AsyncMonoRetryTopicScenarioTests {
 
 	static class MyCustomDltProcessor {
 
-		final List<String> receivedMsg = Collections.synchronizedList(new ArrayList<>());
+		final List<String> receivedMsg = new ArrayList<>();
 
 		MyCustomDltProcessor(KafkaTemplate<String, String> kafkaTemplate, CountDownLatch latch) {
 			this.kafkaTemplate = kafkaTemplate;
@@ -1329,7 +1329,7 @@ public class AsyncMonoRetryTopicScenarioTests {
 			Map<String, Object> props = KafkaTestUtils.consumerProps(
 					this.broker.getBrokersAsString(),
 					"groupId",
-					false);
+					"false");
 			return new DefaultKafkaConsumerFactory<>(props);
 		}
 

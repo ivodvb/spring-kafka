@@ -20,7 +20,8 @@ import java.util.Map;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Provides a number of convenience methods wrapping {@code AdminClient}.
@@ -49,13 +50,6 @@ public interface KafkaAdminOperations {
 	 * @return a map of name:topicDescription.
 	 */
 	Map<String, TopicDescription> describeTopics(String... topicNames);
-
-	/**
-	 * Delete topics from the Kafka cluster.
-	 * @param topicNames the topic names to delete.
-	 * @since 4.0
-	 */
-	void deleteTopics(String... topicNames);
 
 	/**
 	 * Return the cluster id, if available.

@@ -20,12 +20,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.listener.adapter.DelegatingInvocableHandler;
 import org.springframework.kafka.listener.adapter.HandlerAdapter;
 import org.springframework.kafka.listener.adapter.MessagingMessageListenerAdapter;
-import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.validation.Validator;
 
@@ -46,9 +44,9 @@ public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerE
 
 	private List<Method> methods;
 
-	private @Nullable Method defaultMethod;
+	private Method defaultMethod;
 
-	private @Nullable Validator validator;
+	private Validator validator;
 
 	/**
 	 * Construct an instance for the provided methods, default method and bean.
@@ -57,7 +55,6 @@ public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerE
 	 * @param bean the bean.
 	 * @since 2.1.3
 	 */
-	@SuppressWarnings("this-escape")
 	public MultiMethodKafkaListenerEndpoint(List<Method> methods, @Nullable Method defaultMethod, Object bean) {
 		this.methods = methods;
 		this.defaultMethod = defaultMethod;
@@ -87,7 +84,7 @@ public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerE
 	 * @return the default method.
 	 * @since 3.2
 	 */
-	public @Nullable Method getDefaultMethod() {
+	public Method getDefaultMethod() {
 		return this.defaultMethod;
 	}
 
@@ -96,7 +93,7 @@ public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerE
 	 * @param defaultMethod the default method.
 	 * @since 3.2
 	 */
-	public void setDefaultMethod(@Nullable Method defaultMethod) {
+	public void setDefaultMethod(Method defaultMethod) {
 		this.defaultMethod = defaultMethod;
 	}
 
@@ -114,14 +111,11 @@ public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerE
 		List<InvocableHandlerMethod> invocableHandlerMethods = new ArrayList<>();
 		InvocableHandlerMethod defaultHandler = null;
 		for (Method method : this.methods) {
-			MessageHandlerMethodFactory messageHandlerMethodFactory = getMessageHandlerMethodFactory();
-			if (messageHandlerMethodFactory != null) {
-				InvocableHandlerMethod handler = messageHandlerMethodFactory
-						.createInvocableHandlerMethod(getBean(), method);
-				invocableHandlerMethods.add(handler);
-				if (method.equals(this.defaultMethod)) {
-					defaultHandler = handler;
-				}
+			InvocableHandlerMethod handler = getMessageHandlerMethodFactory()
+					.createInvocableHandlerMethod(getBean(), method);
+			invocableHandlerMethods.add(handler);
+			if (method.equals(this.defaultMethod)) {
+				defaultHandler = handler;
 			}
 		}
 		DelegatingInvocableHandler delegatingHandler = new DelegatingInvocableHandler(invocableHandlerMethods,

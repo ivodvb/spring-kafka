@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import org.springframework.util.backoff.BackOff;
-import org.springframework.util.backoff.ExponentialBackOff;
-import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.retry.backoff.BackOffPolicy;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.backoff.NoBackOffPolicy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +36,7 @@ class BackOffValuesGeneratorTests {
 	@Test
 	void shouldGenerateWithDefaultValues() {
 		// Default MAX_ATTEMPTS = 3
-		// Default BackOff = FixedBackOff with 1000ms interval
+		// Default Policy = FixedBackoffPolicy
 
 		// setup
 		BackOffValuesGenerator backOffValuesGenerator = new BackOffValuesGenerator(-1, null);
@@ -53,8 +53,10 @@ class BackOffValuesGeneratorTests {
 	void shouldGenerateExponentialValues() {
 
 		// setup
-		ExponentialBackOff backOff = new ExponentialBackOff(1000, 2);
-		BackOffValuesGenerator backOffValuesGenerator = new BackOffValuesGenerator(4, backOff);
+		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+		backOffPolicy.setMultiplier(2);
+		backOffPolicy.setInitialInterval(1000);
+		BackOffValuesGenerator backOffValuesGenerator = new BackOffValuesGenerator(4, backOffPolicy);
 
 		// when
 		List<Long> backOffValues = backOffValuesGenerator.generateValues();
@@ -68,8 +70,8 @@ class BackOffValuesGeneratorTests {
 	void shouldGenerateWithNoBackOff() {
 
 		// setup
-		BackOff backOff = new FixedBackOff(0);
-		BackOffValuesGenerator backOffValuesGenerator = new BackOffValuesGenerator(4, backOff);
+		BackOffPolicy backOffPolicy = new NoBackOffPolicy();
+		BackOffValuesGenerator backOffValuesGenerator = new BackOffValuesGenerator(4, backOffPolicy);
 
 		// when
 		List<Long> backOffValues = backOffValuesGenerator.generateValues();

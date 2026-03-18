@@ -23,9 +23,9 @@ import java.util.function.Supplier;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.lang.Nullable;
 
 /**
  * Support the use of {@link MockConsumer} in tests.

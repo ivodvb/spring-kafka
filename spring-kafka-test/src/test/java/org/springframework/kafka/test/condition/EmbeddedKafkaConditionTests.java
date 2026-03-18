@@ -21,6 +21,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
@@ -42,12 +43,13 @@ public class EmbeddedKafkaConditionTests {
 	public void test(EmbeddedKafkaBroker broker) {
 		assertThat(broker.getBrokersAsString()).isNotNull();
 		assertThat(KafkaTestUtils.getPropertyValue(broker, "brokerListProperty")).isEqualTo("my.bss.property");
+		assertThat(KafkaTestUtils.getPropertyValue(broker, "controlledShutdown")).isEqualTo(Boolean.TRUE);
 		assertThat(KafkaTestUtils.getPropertyValue(broker, "adminTimeout")).isEqualTo(Duration.ofSeconds(67));
 		assertThat(broker.getPartitionsPerTopic()).isEqualTo(3);
 	}
 
 	@Test
-	public void testResolver(EmbeddedKafkaBroker broker) {
+	public void testResolver(EmbeddedKafkaZKBroker broker) {
 		assertThat(broker).isNotNull();
 	}
 

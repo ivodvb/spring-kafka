@@ -17,7 +17,6 @@
 package org.springframework.kafka.support;
 
 import java.io.IOException;
-import java.io.Serial;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -32,13 +31,9 @@ import org.springframework.util.MimeType;
  * @author Artem Bilan
  *
  * @since 2.3
- *
- * @deprecated since 4.0 in favor of {@link MimeTypeJacksonModule}.
  */
-@Deprecated(forRemoval = true, since = "4.0")
 public final class JacksonMimeTypeModule extends SimpleModule {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	public JacksonMimeTypeModule() {

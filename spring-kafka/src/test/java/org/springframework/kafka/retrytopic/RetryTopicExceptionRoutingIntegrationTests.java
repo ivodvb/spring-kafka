@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.BackOff;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -54,6 +53,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
@@ -211,7 +211,7 @@ public class RetryTopicExceptionRoutingIntegrationTests {
 		CountDownLatchContainer container;
 
 		@RetryableTopic(exclude = ShouldRetryOnlyBlockingException.class, traversingCauses = "true",
-				backOff = @BackOff(50), kafkaTemplate = "kafkaTemplate")
+				backoff = @Backoff(50), kafkaTemplate = "kafkaTemplate")
 		@KafkaListener(topics = ONLY_RETRY_VIA_BLOCKING)
 		public void listenWithAnnotation(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic) {
 			container.onlyRetryViaBlockingLatch.countDown();
@@ -233,7 +233,7 @@ public class RetryTopicExceptionRoutingIntegrationTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		@RetryableTopic(backOff = @BackOff(50), kafkaTemplate = "kafkaTemplate")
+		@RetryableTopic(backoff = @Backoff(50), kafkaTemplate = "kafkaTemplate")
 		@KafkaListener(topics = USER_FATAL_EXCEPTION_TOPIC)
 		public void listenWithAnnotation(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic) {
 			container.fatalUserLatch.countDown();
@@ -255,7 +255,7 @@ public class RetryTopicExceptionRoutingIntegrationTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		@RetryableTopic(backOff = @BackOff(50))
+		@RetryableTopic(backoff = @Backoff(50))
 		@KafkaListener(topics = FRAMEWORK_FATAL_EXCEPTION_TOPIC)
 		public void listenWithAnnotation(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic) {
 			container.fatalFrameworkLatch.countDown();

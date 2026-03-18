@@ -39,8 +39,6 @@ import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -55,6 +53,8 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.event.ContainerStoppedEvent;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -72,7 +72,6 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Sanghyeok An
  * @author Lokesh Alamuri
- * @author Christian Fredriksson
  */
 public abstract class AbstractMessageListenerContainer<K, V>
 		implements GenericMessageListenerContainer<K, V>, BeanNameAware, ApplicationEventPublisherAware,
@@ -102,9 +101,9 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	@NonNull
 	private String beanName = "noBeanNameSet";
 
-	private @Nullable ApplicationEventPublisher applicationEventPublisher;
+	private ApplicationEventPublisher applicationEventPublisher;
 
-	private @Nullable CommonErrorHandler commonErrorHandler;
+	private CommonErrorHandler commonErrorHandler;
 
 	private boolean autoStartup = true;
 
@@ -115,16 +114,15 @@ public abstract class AbstractMessageListenerContainer<K, V>
 
 	private int topicCheckTimeout = DEFAULT_TOPIC_CHECK_TIMEOUT;
 
-	private @Nullable RecordInterceptor<K, V> recordInterceptor;
+	private RecordInterceptor<K, V> recordInterceptor;
 
-	private @Nullable BatchInterceptor<K, V> batchInterceptor;
+	private BatchInterceptor<K, V> batchInterceptor;
 
 	private boolean interceptBeforeTx = true;
 
-	@SuppressWarnings("NullAway.Init")
 	private byte[] listenerInfo;
 
-	private @Nullable ApplicationContext applicationContext;
+	private ApplicationContext applicationContext;
 
 	private volatile boolean running = false;
 
@@ -151,13 +149,13 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	 * @param containerProperties the properties.
 	 */
 	@SuppressWarnings("unchecked")
-	protected AbstractMessageListenerContainer(@Nullable ConsumerFactory<? super K, ? super V> consumerFactory,
+	protected AbstractMessageListenerContainer(ConsumerFactory<? super K, ? super V> consumerFactory,
 			ContainerProperties containerProperties) {
 
 		Assert.notNull(containerProperties, "'containerProperties' cannot be null");
 		Assert.notNull(consumerFactory, "'consumerFactory' cannot be null");
 		this.consumerFactory = (ConsumerFactory<K, V>) consumerFactory;
-		String @Nullable [] topics = containerProperties.getTopics();
+		String[] topics = containerProperties.getTopics();
 		if (topics != null) {
 			this.containerProperties = new ContainerProperties(topics);
 		}
@@ -167,7 +165,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 				this.containerProperties = new ContainerProperties(topicPattern);
 			}
 			else {
-				TopicPartitionOffset @Nullable [] topicPartitions = containerProperties.getTopicPartitions();
+				TopicPartitionOffset[] topicPartitions = containerProperties.getTopicPartitions();
 				if (topicPartitions != null) {
 					this.containerProperties = new ContainerProperties(topicPartitions);
 				}
@@ -214,6 +212,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	 * Return the bean name.
 	 * @return the bean name.
 	 */
+	@Nullable
 	public String getBeanName() {
 		return this.beanName;
 	}
@@ -371,8 +370,8 @@ public abstract class AbstractMessageListenerContainer<K, V>
 		return this.mainListenerId;
 	}
 
+	@Nullable
 	@Override
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	public byte[] getListenerInfo() {
 		return this.listenerInfo != null ? Arrays.copyOf(this.listenerInfo, this.listenerInfo.length) : null;
 	}
@@ -383,7 +382,6 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	 * @param listenerInfo the info.
 	 * @since 2.8.4
 	 */
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	public void setListenerInfo(@Nullable byte[] listenerInfo) {
 		this.listenerInfo = listenerInfo != null ? Arrays.copyOf(listenerInfo, listenerInfo.length) : null;
 	}
@@ -460,12 +458,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 		this.kafkaAdmin = kafkaAdmin;
 	}
 
-	/**
-	 * Get the {@link RecordInterceptor} for modification, if configured.
-	 * @return the {@link RecordInterceptor}, or {@code null} if not configured
-	 * @since 4.0
-	 */
-	public @Nullable RecordInterceptor<K, V> getRecordInterceptor() {
+	protected RecordInterceptor<K, V> getRecordInterceptor() {
 		return this.recordInterceptor;
 	}
 
@@ -476,16 +469,11 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	 * @since 2.2.7
 	 * @see #setInterceptBeforeTx(boolean)
 	 */
-	public void setRecordInterceptor(@Nullable RecordInterceptor<K, V> recordInterceptor) {
+	public void setRecordInterceptor(RecordInterceptor<K, V> recordInterceptor) {
 		this.recordInterceptor = recordInterceptor;
 	}
 
-	/**
-	 * Get the {@link BatchInterceptor} for modification, if configured.
-	 * @return the {@link BatchInterceptor}, or {@code null} if not configured
-	 * @since 4.0
-	 */
-	public @Nullable BatchInterceptor<K, V> getBatchInterceptor() {
+	protected BatchInterceptor<K, V> getBatchInterceptor() {
 		return this.batchInterceptor;
 	}
 
@@ -495,7 +483,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 	 * @since 2.6.6
 	 * @see #setInterceptBeforeTx(boolean)
 	 */
-	public void setBatchInterceptor(@Nullable BatchInterceptor<K, V> batchInterceptor) {
+	public void setBatchInterceptor(BatchInterceptor<K, V> batchInterceptor) {
 		this.batchInterceptor = batchInterceptor;
 	}
 
@@ -553,7 +541,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 			List<String> missing = null;
 			try (AdminClient client = AdminClient.create(configs)) { // NOSONAR - false positive null check
 				if (client != null) {
-					@Nullable String[] topics = this.containerProperties.getTopics();
+					String[] topics = this.containerProperties.getTopics();
 					if (topics == null) {
 						topics = Arrays.stream(this.containerProperties.getTopicPartitions())
 								.map(TopicPartitionOffset::getTopic)
@@ -577,7 +565,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 								}
 							})
 							.map(Entry::getKey)
-							.toList();
+							.collect(Collectors.toList());
 				}
 			}
 			catch (Exception e) {
@@ -585,7 +573,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 			}
 			if (missing != null && !missing.isEmpty()) {
 				throw new IllegalStateException(
-						"Topic(s) " + missing
+						"Topic(s) " + missing.toString()
 								+ " is/are not present and missingTopicsFatal is true");
 			}
 		}
@@ -625,6 +613,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 				final CountDownLatch latch = new CountDownLatch(1);
 				this.lifecycleLock.lock();
 				try {
+
 					doStop(latch::countDown);
 				}
 				finally {
@@ -646,6 +635,7 @@ public abstract class AbstractMessageListenerContainer<K, V>
 				finally {
 					this.lifecycleLock.unlock();
 				}
+
 			}
 		}
 	}

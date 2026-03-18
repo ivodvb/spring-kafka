@@ -27,6 +27,7 @@ import org.springframework.kafka.retrytopic.ExceptionBasedDltDestination;
 import org.springframework.kafka.retrytopic.RetryTopicConstants;
 import org.springframework.kafka.retrytopic.SameIntervalTopicReuseStrategy;
 import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
+import org.springframework.retry.annotation.Backoff;
 
 /**
  *
@@ -59,12 +60,12 @@ public @interface RetryableTopic {
 	String attempts() default "3";
 
 	/**
-	 * Specify the backOff properties for retrying this operation. The default is a fixed
-	 * backOff of {@value BackOff#DEFAULT_DELAY} ms. See {@link BackOff} for more details
-	 * about the available options
-	 * @return a backOff specification
+	 * Specify the backoff properties for retrying this operation. The default is a simple
+	 * {@link Backoff} specification with no properties - see it's documentation for
+	 * defaults.
+	 * @return a backoff specification
 	 */
-	BackOff backOff() default @BackOff;
+	Backoff backoff() default @Backoff;
 
 	/**
 	 *
@@ -191,7 +192,7 @@ public @interface RetryableTopic {
 
 
 	/**
-	 * Topic reuse strategy for sequential attempts made with a same back off interval.
+	 * Topic reuse strategy for sequential attempts made with a same backoff interval.
 	 * Starting 3.2, change default behavior to {@code SameIntervalTopicReuseStrategy.SINGLE_TOPIC}.
 	 *
 	 * @return the strategy.

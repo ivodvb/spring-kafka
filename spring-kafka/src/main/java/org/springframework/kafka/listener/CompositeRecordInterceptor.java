@@ -22,8 +22,8 @@ import java.util.Collection;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -35,7 +35,6 @@ import org.springframework.util.Assert;
  *
  * @author Artem Bilan
  * @author Gary Russell
- * @author Sanghyeok An
  * @since 2.3
  *
  */
@@ -91,15 +90,6 @@ public class CompositeRecordInterceptor<K, V> implements RecordInterceptor<K, V>
 	@Override
 	public void afterRecord(ConsumerRecord<K, V> record, Consumer<K, V> consumer) {
 		this.delegates.forEach(del -> del.afterRecord(record, consumer));
-	}
-
-	/**
-	 * Add an {@link RecordInterceptor} to delegates.
-	 * @param recordInterceptor the interceptor.
-	 * @since 4.0
-	 */
-	public void addRecordInterceptor(RecordInterceptor<K, V> recordInterceptor) {
-		this.delegates.add(recordInterceptor);
 	}
 
 }

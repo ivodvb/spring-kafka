@@ -23,8 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
-import org.apache.kafka.streams.errors.ErrorHandlerContext;
-import org.jspecify.annotations.Nullable;
+import org.apache.kafka.streams.processor.ProcessorContext;
 
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.util.ClassUtils;
@@ -34,7 +33,6 @@ import org.springframework.util.ClassUtils;
  * and continues.
  *
  * @author Gary Russell
- * @author Soby Chacko
  * @since 2.3
  *
  */
@@ -47,7 +45,7 @@ public class RecoveringDeserializationExceptionHandler implements Deserializatio
 
 	private static final Log LOGGER = LogFactory.getLog(RecoveringDeserializationExceptionHandler.class);
 
-	private @Nullable ConsumerRecordRecoverer recoverer;
+	private ConsumerRecordRecoverer recoverer;
 
 	public RecoveringDeserializationExceptionHandler() {
 	}
@@ -56,36 +54,20 @@ public class RecoveringDeserializationExceptionHandler implements Deserializatio
 		this.recoverer = recoverer;
 	}
 
-	/**
-	 * Handle the deserialization exception by delegating to the configured recoverer.
-	 * @deprecated since 4.1 in favor of {@link #handleError(ErrorHandlerContext, ConsumerRecord, Exception)}.
-	 */
-	@Deprecated(since = "4.1", forRemoval = true)
 	@Override
-	@SuppressWarnings("deprecation")
-	public DeserializationHandlerResponse handle(ErrorHandlerContext context, ConsumerRecord<byte[], byte[]> record,
-			Exception exception) {
-
-		Response response = handleError(context, record, exception);
-		return response.result() == Result.RESUME
-				? DeserializationHandlerResponse.CONTINUE
-				: DeserializationHandlerResponse.FAIL;
-	}
-
-	@Override
-	public Response handleError(ErrorHandlerContext context, ConsumerRecord<byte[], byte[]> record,
+	public DeserializationHandlerResponse handle(ProcessorContext context, ConsumerRecord<byte[], byte[]> record,
 			Exception exception) {
 
 		if (this.recoverer == null) {
-			return Response.fail();
+			return DeserializationHandlerResponse.FAIL;
 		}
 		try {
 			this.recoverer.accept(record, exception);
-			return Response.resume();
+			return DeserializationHandlerResponse.CONTINUE;
 		}
 		catch (RuntimeException e) {
 			LOGGER.error("Recoverer threw an exception; recovery failed", e);
-			return Response.fail();
+			return DeserializationHandlerResponse.FAIL;
 		}
 	}
 

@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.listener.ConsumerSeekAware;
@@ -47,7 +46,7 @@ public abstract class AbstractDelegatingMessageListenerAdapter<T>
 
 	protected final ListenerType delegateType; // NOSONAR
 
-	private final @Nullable ConsumerSeekAware seekAware;
+	private final ConsumerSeekAware seekAware;
 
 	public AbstractDelegatingMessageListenerAdapter(T delegate) {
 		this.delegate = delegate;
@@ -80,7 +79,7 @@ public abstract class AbstractDelegatingMessageListenerAdapter<T>
 	}
 
 	@Override
-	public void onPartitionsRevoked(@Nullable Collection<TopicPartition> partitions) {
+	public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
 		if (this.seekAware != null) {
 			this.seekAware.onPartitionsRevoked(partitions);
 		}

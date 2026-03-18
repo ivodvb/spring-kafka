@@ -30,10 +30,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
@@ -150,7 +150,7 @@ class FallbackBatchErrorHandler extends ExceptionClassifier implements CommonErr
 		this.retrying.put(Thread.currentThread(), true);
 		try {
 			ErrorHandlingUtils.retryBatch(thrownException, records, consumer, container, invokeListener, this.backOff,
-					this.seeker, this.recoverer, this.logger, getLogLevel(), this.retryListeners, getExceptionMatcher(),
+					this.seeker, this.recoverer, this.logger, getLogLevel(), this.retryListeners, getClassifier(),
 					this.reclassifyOnExceptionChange);
 		}
 		finally {

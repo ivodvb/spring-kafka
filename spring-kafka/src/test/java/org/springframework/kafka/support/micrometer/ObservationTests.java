@@ -61,7 +61,6 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
@@ -71,7 +70,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.annotation.BackOff;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -85,7 +83,6 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.listener.RecordInterceptor;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
@@ -96,12 +93,12 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.StringUtils;
-import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -115,8 +112,6 @@ import static org.mockito.Mockito.mock;
  * @author Christian Mergenthaler
  * @author Soby Chacko
  * @author Francois Rosiere
- * @author Christian Fredriksson
- * @author Youngjoo Kim
  *
  * @since 3.0
  */
@@ -236,16 +231,17 @@ public class ObservationTests {
 		MessageListenerContainer listenerContainer1 = rler.getListenerContainer("obs1");
 		listenerContainer1.stop();
 
-		assertThat(template.send(OBSERVATION_TEST_1, "test")
-				.thenAccept((sendResult) -> spanFromCallback.set(tracer.currentSpan())))
-				.succeedsWithin(Duration.ofSeconds(20));
+		template.send(OBSERVATION_TEST_1, "test")
+				.thenAccept((sendResult) -> spanFromCallback.set(tracer.currentSpan()))
+				.get(10, TimeUnit.SECONDS);
 
 		Deque<SimpleSpan> spans = tracer.getSpans();
 		assertThat(spans).hasSize(1);
 
 		SimpleSpan templateSpan = spans.peek();
 		assertThat(templateSpan).isNotNull();
-		assertThat(templateSpan.getTags()).containsAllEntriesOf(Map.of("key", "value"));
+		assertThat(templateSpan.getTags()).containsAllEntriesOf(Map.of(
+				"key", "value"));
 
 		assertThat(spanFromCallback.get()).isNotNull();
 		listenerContainer1.start();
@@ -355,7 +351,7 @@ public class ObservationTests {
 				"messaging.system", "kafka",
 				"messaging.destination.kind", "topic",
 				"messaging.destination.name", destName));
-		if (keyValues.length > 0) {
+		if (keyValues != null && keyValues.length > 0) {
 			Arrays.stream(keyValues).forEach(entry -> assertThat(span.getTags()).contains(entry));
 		}
 		assertThat(span.getName()).isEqualTo(destName + " send");
@@ -381,14 +377,14 @@ public class ObservationTests {
 								Map.entry("messaging.kafka.consumer.group", consumerGroup),
 								Map.entry("messaging.kafka.message.offset", offset),
 								Map.entry("messaging.kafka.source.partition", partition),
-								Map.entry("messaging.operation", "process"),
+								Map.entry("messaging.operation", "receive"),
 								Map.entry("messaging.source.kind", "topic"),
 								Map.entry("messaging.source.name", sourceName),
 								Map.entry("messaging.system", "kafka")));
-		if (keyValues.length > 0) {
+		if (keyValues != null && keyValues.length > 0) {
 			Arrays.stream(keyValues).forEach(entry -> assertThat(span.getTags()).contains(entry));
 		}
-		assertThat(span.getName()).isEqualTo(sourceName + " process");
+		assertThat(span.getName()).isEqualTo(sourceName + " receive");
 		return span;
 	}
 
@@ -410,7 +406,7 @@ public class ObservationTests {
 		meterRegistryAssert.hasTimerWithNameAndTags("spring.kafka.listener",
 				KeyValues.of(
 								"messaging.kafka.consumer.group", consumerGroup,
-								"messaging.operation", "process",
+								"messaging.operation", "receive",
 								"messaging.source.kind", "topic",
 								"messaging.source.name", destName,
 								"messaging.system", "kafka",
@@ -482,8 +478,7 @@ public class ObservationTests {
 	}
 
 	@Test
-	void observationErrorExceptionWhenCompletableFutureReturned(@Autowired ExceptionListener listener,
-			@Autowired SimpleTracer tracer,
+	void observationErrorExceptionWhenCompletableFutureReturned(@Autowired ExceptionListener listener, @Autowired SimpleTracer tracer,
 			@Autowired @Qualifier("throwableTemplate") KafkaTemplate<Integer, String> errorTemplate,
 			@Autowired KafkaListenerEndpointRegistry endpointRegistry)
 			throws ExecutionException, InterruptedException, TimeoutException {
@@ -590,9 +585,10 @@ public class ObservationTests {
 		assertThat(template.sendAndReceive(new ProducerRecord<>(OBSERVATION_TEST_4, "test"))
 				// the current observation must be retrieved from the consumer thread of the reply
 				.thenApply(replyRecord -> observationRegistry.getCurrentObservation().getContext()))
-				.isCompletedWithValueMatchingWithin(observationContext ->
-						observationContext instanceof KafkaRecordReceiverContext
-								&& "spring.kafka.listener".equals(observationContext.getName()), Duration.ofSeconds(30));
+				.succeedsWithin(Duration.ofSeconds(30))
+				.isInstanceOf(KafkaRecordReceiverContext.class)
+				.extracting("name")
+				.isEqualTo("spring.kafka.listener");
 	}
 
 	@Configuration
@@ -631,7 +627,7 @@ public class ObservationTests {
 
 		@Bean
 		ConsumerFactory<Integer, String> consumerFactory(EmbeddedKafkaBroker broker) {
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(broker, "obs", false);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("obs", "false", broker);
 			consumerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker.getBrokersAsString() + ","
 					+ broker.getBrokersAsString() + "," + broker.getBrokersAsString());
 			return new DefaultKafkaConsumerFactory<>(consumerProps);
@@ -669,11 +665,8 @@ public class ObservationTests {
 		}
 
 		@Bean
-		ReplyingKafkaTemplate<Integer, String, String> replyingKafkaTemplate(
-				ProducerFactory<Integer, String> pf,
-				ConcurrentKafkaListenerContainerFactory<Integer, String> containerFactory) {
-
-			var kafkaTemplate = new ReplyingKafkaTemplate<>(pf, containerFactory.createContainer(OBSERVATION_REPLY));
+		ReplyingKafkaTemplate<Integer, String, String> replyingKafkaTemplate(ProducerFactory<Integer, String> pf, ConcurrentKafkaListenerContainerFactory<Integer, String> containerFactory) {
+			ReplyingKafkaTemplate<Integer, String, String> kafkaTemplate = new ReplyingKafkaTemplate<>(pf, containerFactory.createContainer(OBSERVATION_REPLY));
 			kafkaTemplate.setObservationEnabled(true);
 			return kafkaTemplate;
 		}
@@ -696,9 +689,6 @@ public class ObservationTests {
 					// Enable async acks to trigger async failure handling
 					container.getContainerProperties().setAsyncAcks(true);
 					container.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-				}
-				if (container.getListenerId().equals("obs6") || container.getListenerId().equals("obs7")) {
-					container.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0L, 0)));
 				}
 				if (container.getListenerId().equals("obs4")) {
 					container.setRecordInterceptor(new RecordInterceptor<>() {
@@ -744,8 +734,7 @@ public class ObservationTests {
 									new PropagatingSenderTracingObservationHandler<>(tracer, propagator),
 									// This is responsible for creating a default span
 									new DefaultTracingObservationHandler(tracer)))
-					.observationHandler(new TracingAwareMeterObservationHandler<>(
-							new DefaultMeterObservationHandler(meterRegistry), tracer));
+					.observationHandler(new TracingAwareMeterObservationHandler<>(new DefaultMeterObservationHandler(meterRegistry), tracer));
 			return observationRegistry;
 		}
 
@@ -761,7 +750,7 @@ public class ObservationTests {
 
 				// This is called on the producer side when the message is being sent
 				@Override
-				public <C> void inject(TraceContext context, @Nullable C carrier, Setter<C> setter) {
+				public <C> void inject(TraceContext context, C carrier, Setter<C> setter) {
 					setter.set(carrier, "foo", "some foo value");
 					setter.set(carrier, "bar", "some bar value");
 
@@ -900,11 +889,11 @@ public class ObservationTests {
 
 		final CountDownLatch asyncFailureLatch = new CountDownLatch(3);
 
-		volatile @Nullable SimpleSpan capturedSpanInListener;
+		volatile SimpleSpan capturedSpanInListener;
 
-		volatile @Nullable SimpleSpan capturedSpanInRetry;
+		volatile SimpleSpan capturedSpanInRetry;
 
-		volatile @Nullable SimpleSpan capturedSpanInDlt;
+		volatile SimpleSpan capturedSpanInDlt;
 
 		private final SimpleTracer tracer;
 
@@ -914,7 +903,7 @@ public class ObservationTests {
 
 		@RetryableTopic(
 				attempts = "2",
-				backOff = @BackOff(delay = 1000)
+				backoff = @Backoff(delay = 1000)
 		)
 		@KafkaListener(id = "asyncFailure", topics = OBSERVATION_ASYNC_FAILURE_TEST)
 		CompletableFuture<Void> handleAsync(ConsumerRecord<Integer, String> record) {

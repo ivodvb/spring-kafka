@@ -28,7 +28,6 @@ import java.util.function.Function;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -102,7 +101,7 @@ public final class KafkaUtils {
 	 * @param groupId the group id.
 	 * @since 2.3
 	 */
-	public static void setConsumerGroupId(@Nullable String groupId) {
+	public static void setConsumerGroupId(String groupId) {
 		if (groupId != null) {
 			KafkaUtils.GROUP_IDS.put(Thread.currentThread(), groupId);
 		}
@@ -113,7 +112,7 @@ public final class KafkaUtils {
 	 * @return the group id.
 	 * @since 2.3
 	 */
-	public static @Nullable String getConsumerGroupId() {
+	public static String getConsumerGroupId() {
 		return KafkaUtils.GROUP_IDS.get(Thread.currentThread());
 	}
 
@@ -151,11 +150,20 @@ public final class KafkaUtils {
 			catch (@SuppressWarnings("unused") NumberFormatException ex) {
 			}
 		}
-		Integer deliveryTimeoutInMs = (Integer) ProducerConfig.configDef().defaultValues()
-				.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG);
 		return Duration.ofMillis(Math.max(
-				deliveryTimeoutInMs == null ? 0 : deliveryTimeoutInMs.longValue() + buffer,
+				((Integer) ProducerConfig.configDef().defaultValues()
+						.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG)).longValue() + buffer,
 				min));
+	}
+
+	/**
+	 * Set to true to only log record metadata.
+	 * @param onlyMeta true to only log record metadata.
+	 * @since 2.7.12
+	 * @deprecated - no longer used.
+	 */
+	@Deprecated(since = "3.1", forRemoval = true) // 3.2
+	public static void setLogOnlyMetadata(boolean onlyMeta) {
 	}
 
 	/**

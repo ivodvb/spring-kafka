@@ -16,9 +16,8 @@
 
 package org.springframework.kafka.listener.adapter;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.expression.Expression;
+import org.springframework.lang.Nullable;
 
 /**
  * The result of a method invocation.

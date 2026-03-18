@@ -35,7 +35,6 @@ import org.springframework.messaging.MessageHeaders;
  * The exceptions are correlation and reply headers for request/reply
  *
  * @author Gary Russell
- * @author Sanghyeok An
  * @since 2.1.3
  *
  */
@@ -95,40 +94,27 @@ public class SimpleKafkaHeaderMapper extends AbstractKafkaHeaderMapper {
 	public void fromHeaders(MessageHeaders headers, Headers target) {
 		headers.forEach((key, value) -> {
 			if (!NEVER.contains(key)) {
-				if (doesMatchMultiValueHeader(key)) {
-					if (value instanceof Iterable<?> valuesToMap) {
-						valuesToMap.forEach(o -> fromHeader(key, o, target));
-					}
-					else {
-						fromHeader(key, value, target);
-					}
-				}
-				else {
-					fromHeader(key, value, target);
+				Object valueToAdd = headerValueToAddOut(key, value);
+				if (valueToAdd instanceof byte[] && matches(key, valueToAdd)) {
+					target.add(new RecordHeader(key, (byte[]) valueToAdd));
 				}
 			}
 		});
 	}
 
 	@Override
-	public void toHeaders(Headers source, Map<String, Object> headers) {
+	public void toHeaders(Headers source, Map<String, Object> target) {
 		source.forEach(header -> {
 			String headerName = header.key();
 			if (matchesForInbound(headerName)) {
 				if (headerName.equals(KafkaHeaders.DELIVERY_ATTEMPT)) {
-					headers.put(headerName, ByteBuffer.wrap(header.value()).getInt());
+					target.put(headerName, ByteBuffer.wrap(header.value()).getInt());
 				}
 				else {
-					fromUserHeader(headerName, header, headers);
+					target.put(headerName, headerValueToAddIn(header));
 				}
 			}
 		});
-	}
-
-	private void fromHeader(String key, Object value, Headers target) {
-		if (headerValueToAddOut(key, value) instanceof byte[] valueToAdd && matches(key, valueToAdd)) {
-			target.add(new RecordHeader(key, valueToAdd));
-		}
 	}
 
 }

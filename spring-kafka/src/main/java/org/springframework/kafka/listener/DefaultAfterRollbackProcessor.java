@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
@@ -29,11 +28,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.listener.ContainerProperties.EOSMode;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.BackOffExecution;
@@ -66,7 +65,7 @@ public class DefaultAfterRollbackProcessor<K, V> extends FailedRecordProcessor
 
 	private final BackOff backOff;
 
-	private final @Nullable KafkaOperations<?, ?> kafkaTemplate;
+	private final KafkaOperations<?, ?> kafkaTemplate;
 
 	private final BiConsumer<ConsumerRecords<?, ?>, Exception> recoverer;
 
@@ -142,7 +141,6 @@ public class DefaultAfterRollbackProcessor<K, V> extends FailedRecordProcessor
 	 * {@link KafkaOperations}.
 	 * @since 2.9
 	 */
-	@SuppressWarnings("this-escape")
 	public DefaultAfterRollbackProcessor(@Nullable BiConsumer<ConsumerRecord<?, ?>, Exception> recoverer,
 			BackOff backOff, @Nullable BackOffHandler backOffHandler, @Nullable KafkaOperations<?, ?> kafkaOperations,
 			boolean commitRecovered) {
@@ -171,7 +169,7 @@ public class DefaultAfterRollbackProcessor<K, V> extends FailedRecordProcessor
 
 		if (SeekUtils.doSeeks((List) records, consumer, exception, recoverable,
 				getFailureTracker(), container, this.logger)
-					&& isCommitRecovered() && Objects.requireNonNull(this.kafkaTemplate).isTransactional()) {
+					&& isCommitRecovered() && this.kafkaTemplate.isTransactional()) {
 			ConsumerRecord<K, V> skipped = records.get(0);
 			this.kafkaTemplate.sendOffsetsToTransaction(
 					Collections.singletonMap(new TopicPartition(skipped.topic(), skipped.partition()),

@@ -28,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.kafka.annotation.BackOff;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -45,6 +44,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
@@ -113,7 +113,7 @@ public class DeliveryHeaderTests {
 			return DeadLetterPublishingRecovererFactory::neverLogListenerException;
 		}
 
-		@RetryableTopic(backOff = @BackOff(maxDelay = 0))
+		@RetryableTopic(backoff = @Backoff(maxDelay = 0))
 		@KafkaListener(id = "dh1", topics = "dh1")
 		void listen(String in, @Header(KafkaHeaders.DELIVERY_ATTEMPT) int blockingAttempts,
 				@Header(name = RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, required = false) Integer nonBlockingAttempts,
@@ -157,7 +157,7 @@ public class DeliveryHeaderTests {
 		@Primary
 		ConsumerFactory<Integer, String> cf() {
 			return new DefaultKafkaConsumerFactory<>(
-					KafkaTestUtils.consumerProps(this.broker, "dh1", false));
+					KafkaTestUtils.consumerProps("dh1", "false", this.broker));
 		}
 
 		@Bean
@@ -167,7 +167,7 @@ public class DeliveryHeaderTests {
 
 	}
 
-	@RetryableTopic(backOff = @BackOff(maxDelay = 0))
+	@RetryableTopic(backoff = @Backoff(maxDelay = 0))
 	@KafkaListener(id = "dhClassLevel1", topics = DH_CLASS_LEVEL_1)
 	static class RetryTopicClassLevel {
 

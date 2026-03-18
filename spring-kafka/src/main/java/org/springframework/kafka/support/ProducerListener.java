@@ -18,7 +18,8 @@ package org.springframework.kafka.support;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Listener for handling outbound Kafka messages. Exactly one of its methods will be invoked, depending on whether

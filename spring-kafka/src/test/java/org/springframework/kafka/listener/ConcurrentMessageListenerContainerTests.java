@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +42,6 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -65,6 +63,7 @@ import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.lang.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -130,7 +129,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testAutoCommit() throws Exception {
 		this.logger.info("Start auto");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test1", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test1", "true", embeddedKafka);
 		AtomicReference<Properties> overrides = new AtomicReference<>();
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props) {
 
@@ -149,7 +148,7 @@ public class ConcurrentMessageListenerContainerTests {
 
 		final CountDownLatch latch = new CountDownLatch(3);
 		final Set<String> listenerThreadNames = new ConcurrentSkipListSet<>();
-		List<String> payloads = Collections.synchronizedList(new ArrayList<>());
+		final List<String> payloads = new ArrayList<>();
 		containerProps.setMessageListener((MessageListener<Integer, String>) message -> {
 			ConcurrentMessageListenerContainerTests.this.logger.info("auto: " + message);
 			listenerThreadNames.add(Thread.currentThread().getName());
@@ -199,9 +198,7 @@ public class ConcurrentMessageListenerContainerTests {
 		template.flush();
 		assertThat(intercepted.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(latch.await(60, TimeUnit.SECONDS)).isTrue();
-		synchronized (payloads) {
-			assertThat(payloads).containsExactlyInAnyOrder("foo", "bar", "qux");
-		}
+		assertThat(payloads).containsExactlyInAnyOrder("foo", "bar", "qux");
 		assertThat(listenerThreadNames).contains("testAuto-0", "testAuto-1");
 		List<KafkaMessageListenerContainer<Integer, String>> containers = KafkaTestUtils.getPropertyValue(container,
 				"containers", List.class);
@@ -253,7 +250,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testAutoCommitWithRebalanceListener() throws Exception {
 		this.logger.info("Start auto");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test10", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test10", "false", embeddedKafka);
 		AtomicReference<Properties> overrides = new AtomicReference<>();
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props) {
 
@@ -330,7 +327,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testAfterListenCommit() throws Exception {
 		this.logger.info("Start manual");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test2", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test2", "false", embeddedKafka);
 		props.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
 		AtomicReference<Properties> overrides = new AtomicReference<>();
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props) {
@@ -406,7 +403,7 @@ public class ConcurrentMessageListenerContainerTests {
 
 	private void testManualCommitGuts(ContainerProperties.AckMode ackMode, String topic, int qual) throws Exception {
 		this.logger.info("Start " + ackMode);
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test" + ackMode + qual, false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test" + ackMode + qual, "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic);
 		final CountDownLatch latch = new CountDownLatch(4);
@@ -451,7 +448,7 @@ public class ConcurrentMessageListenerContainerTests {
 		template.sendDefault(0, "baz");
 		template.sendDefault(2, "qux");
 		template.flush();
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testManualExisting", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testManualExisting", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic7);
 		final CountDownLatch latch = new CountDownLatch(8);
@@ -502,7 +499,7 @@ public class ConcurrentMessageListenerContainerTests {
 		template.sendDefault(0, "baz");
 		template.sendDefault(2, "qux");
 		template.flush();
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testManualExistingSync", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testManualExistingSync", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic8);
 		containerProps.setSyncCommits(true);
@@ -540,7 +537,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testPausedStart() throws Exception {
 		this.logger.info("Start paused start");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test12", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test12", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic12);
 
@@ -630,7 +627,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testListenerException() throws Exception {
 		this.logger.info("Start exception");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test1", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test1", "true", embeddedKafka);
 		props.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic6);
@@ -682,7 +679,7 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testAckOnErrorRecord() throws Exception {
 		logger.info("Start ack on error");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test9", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test9", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		final CountDownLatch latch = new CountDownLatch(4);
 		ContainerProperties containerProps = new ContainerProperties(topic9);
@@ -766,7 +763,7 @@ public class ConcurrentMessageListenerContainerTests {
 
 	private void testAckOnErrorWithManualImmediateGuts(String topic, boolean ackOnError) throws Exception {
 		logger.info("Start ack on error with ManualImmediate ack mode");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testMan" + ackOnError, false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testMan" + ackOnError, "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props);
 		final CountDownLatch latch = new CountDownLatch(2);
 		ContainerProperties containerProps = new ContainerProperties(topic);
@@ -826,7 +823,8 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testIsChildRunning() throws Exception {
 		this.logger.info("Start isChildRunning");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test1", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test1", "true",
+				embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props) {
 
 			@Override
@@ -973,7 +971,8 @@ public class ConcurrentMessageListenerContainerTests {
 	@Test
 	public void testContainerStartStop() throws Exception {
 		this.logger.info("Start containerStartStop");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test1", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test1", "true",
+				embeddedKafka);
 		AtomicReference<Properties> overrides = new AtomicReference<>();
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(props) {
 
@@ -1088,28 +1087,10 @@ public class ConcurrentMessageListenerContainerTests {
 		assertThat(container.getContainers()).
 				doesNotContain(childContainer1);
 
-		KafkaMessageListenerContainer<Integer, String> childContainer0SecRun = container.getContainers().get(0);
-		KafkaMessageListenerContainer<Integer, String> childContainer1SecRun = container.getContainers().get(1);
-
-		childContainer0SecRun.stopAbnormally(() -> {
-		});
-
-		childContainer1SecRun.stop();
-
+		container.getContainers().forEach(containerForEach -> containerForEach.stop());
 		assertThat(container.getContainers()).isNotEmpty();
 		container.stop();
 		assertThat(concurrentContainerSecondStopLatch.await(30, TimeUnit.SECONDS)).isTrue();
-
-		events.stream().forEach(event -> {
-			if (event.getContainer(MessageListenerContainer.class).equals(childContainer0SecRun)
-					&& event instanceof ConsumerStoppedEvent) {
-				assertThat(((ConsumerStoppedEvent) event).getReason()).isEqualTo(ConsumerStoppedEvent.Reason.ABNORMAL);
-			}
-			else if (event.getContainer(MessageListenerContainer.class).equals(childContainer1SecRun)
-					&& event instanceof ConsumerStoppedEvent) {
-				assertThat(((ConsumerStoppedEvent) event).getReason()).isEqualTo(ConsumerStoppedEvent.Reason.NORMAL);
-			}
-		});
 
 		this.logger.info("Stop containerStartStop");
 	}

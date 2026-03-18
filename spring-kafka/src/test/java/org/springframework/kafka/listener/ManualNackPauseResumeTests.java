@@ -195,9 +195,9 @@ public class ManualNackPauseResumeTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					case 1:
-						return new ConsumerRecords(records2, Map.of());
+						return new ConsumerRecords(records2);
 					default:
 						try {
 							Thread.sleep(1000);
@@ -205,7 +205,7 @@ public class ManualNackPauseResumeTests {
 						catch (InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
 			willAnswer(i -> {

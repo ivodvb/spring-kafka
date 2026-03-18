@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
-
 /**
  *
  * The {@link DestinationTopicProcessor} creates and registers the
@@ -58,7 +56,7 @@ public interface DestinationTopicProcessor {
 	 * @param destinationTopicProperties the destination topic properties.
 	 * @param context the context.
 	 */
-	void registerDestinationTopic(String mainTopicName, @Nullable String destinationTopicName,
+	void registerDestinationTopic(String mainTopicName, String destinationTopicName,
 			DestinationTopic.Properties destinationTopicProperties, Context context);
 
 	class Context {

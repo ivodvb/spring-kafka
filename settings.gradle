@@ -12,8 +12,7 @@ plugins {
 
 rootProject.name = 'spring-kafka-dist'
 
-rootDir.eachDir { dir ->
-	if (dir.name.startsWith('spring-')) {
-		include ":${dir.name}"
-	}
-}
+include 'spring-kafka'
+include 'spring-kafka-bom'
+include 'spring-kafka-test'
+include 'spring-kafka-docs'

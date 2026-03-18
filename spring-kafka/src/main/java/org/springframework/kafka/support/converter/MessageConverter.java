@@ -18,11 +18,13 @@ package org.springframework.kafka.support.converter;
 
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import org.apache.kafka.clients.consumer.Consumer;
 
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.KafkaUtils;
+import org.springframework.lang.Nullable;
 
 /**
  * A top level interface for message converters.
@@ -44,8 +46,8 @@ public interface MessageConverter {
 
 	/**
 	 * Set up the common headers.
-	 * @param acknowledgment the acknowledgment (can be Acknowledgment or ShareAcknowledgment).
-	 * @param consumer the consumer (can be Consumer or ShareConsumer).
+	 * @param acknowledgment the acknowledgment.
+	 * @param consumer the consumer.
 	 * @param rawHeaders the raw headers map.
 	 * @param theKey the key.
 	 * @param topic the topic.
@@ -54,8 +56,7 @@ public interface MessageConverter {
 	 * @param timestampType the timestamp type.
 	 * @param timestamp the timestamp.
 	 */
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
-	default void commonHeaders(@Nullable Object acknowledgment, @Nullable Object consumer, Map<String, Object> rawHeaders,
+	default void commonHeaders(Acknowledgment acknowledgment, Consumer<?, ?> consumer, Map<String, Object> rawHeaders,
 			@Nullable Object theKey, Object topic, Object partition, Object offset,
 			@Nullable Object timestampType, Object timestamp) {
 

@@ -23,10 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -47,7 +45,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -59,7 +56,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin.NewTopics;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.ReflectionUtils;
@@ -118,7 +115,6 @@ public class KafkaAdminTests {
 	}
 
 	@Test
-	@Disabled
 	public void testAddTopicsAndAddPartitions() throws Exception {
 		Map<String, TopicDescription> results = this.admin.describeTopics("foo", "bar");
 		results.forEach((name, td) -> assertThat(td.partitions()).hasSize(name.equals("foo") ? 2 : 1));
@@ -206,55 +202,41 @@ public class KafkaAdminTests {
 	public void testDefaultPartsAndReplicas() throws Exception {
 		try (AdminClient adminClient = AdminClient.create(this.admin.getConfigurationProperties())) {
 			Map<String, TopicDescription> results = new HashMap<>();
-			await().atMost(10, TimeUnit.SECONDS).until(() -> {
+			await().until(() -> {
+				DescribeTopicsResult topics = adminClient.describeTopics(Arrays.asList("optBoth", "optPart", "optRepl"));
 				try {
-					DescribeTopicsResult topics = adminClient.describeTopics(Arrays.asList("optBoth", "optPart", "optRepl"));
-
-					// Use CompletableFuture to handle the async operation
-					CompletableFuture<Map<String, TopicDescription>> future =
-							topics.allTopicNames().toCompletionStage().toCompletableFuture();
-
-					try {
-						Map<String, TopicDescription> topicNames = future.get(5, TimeUnit.SECONDS);
-						results.putAll(topicNames);
-						return true;
-					}
-					catch (ExecutionException ex) {
-						if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
-							// Topics don't exist yet, so create them with correct replication factor
-							return false;
-						}
-						throw ex;
-					}
+					results.putAll(topics.allTopicNames().get(10, TimeUnit.SECONDS));
+					return true;
 				}
 				catch (InterruptedException ie) {
 					Thread.currentThread().interrupt();
 					return true;
 				}
-				catch (TimeoutException te) {
-					// Timeout getting the future, try again
-					return false;
+				catch (ExecutionException ex) {
+					if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
+						return false;
+					}
+					throw ex;
 				}
 			});
-
 			var topicDescription = results.get("optBoth");
-			assertThat(topicDescription.partitions()).hasSize(1);
+			assertThat(topicDescription.partitions()).hasSize(2);
 			assertThat(topicDescription.partitions().stream()
 					.map(tpi -> tpi.replicas())
 					.flatMap(nodes -> nodes.stream())
-					.count()).isEqualTo(1);
+					.count()).isEqualTo(4);
 			topicDescription = results.get("optPart");
-			assertThat(topicDescription.partitions()).hasSize(1);
+			assertThat(topicDescription.partitions()).hasSize(2);
 			assertThat(topicDescription.partitions().stream()
 					.map(tpi -> tpi.replicas())
 					.flatMap(nodes -> nodes.stream())
-					.count()).isEqualTo(1);
+					.count()).isEqualTo(2);
 			topicDescription = results.get("optRepl");
 			assertThat(topicDescription.partitions()).hasSize(3);
 			assertThat(topicDescription.partitions().stream()
 					.map(tpi -> tpi.replicas())
 					.flatMap(nodes -> nodes.stream())
-					.count()).isEqualTo(3);
+					.count()).isEqualTo(6);
 		}
 	}
 
@@ -339,71 +321,12 @@ public class KafkaAdminTests {
 		assertThat(kafkaAdmin.getAdminConfig()).containsOnly(Map.entry(AdminClientConfig.CLIENT_ID_CONFIG, "appname-admin-0"));
 	}
 
-	@Test
-	void testDeleteTopics() {
-		NewTopic testTopic1 = TopicBuilder.name("test-delete-1")
-				.partitions(1)
-				.replicas(1)
-				.build();
-		NewTopic testTopic2 = TopicBuilder.name("test-delete-2")
-				.partitions(1)
-				.replicas(1)
-				.build();
-
-		this.admin.createOrModifyTopics(testTopic1, testTopic2);
-
-		await().atMost(10, TimeUnit.SECONDS).until(() -> {
-			try {
-				Map<String, TopicDescription> topics =
-						this.admin.describeTopics("test-delete-1", "test-delete-2");
-				return topics.size() == 2;
-			}
-			catch (Exception e) {
-				return false;
-			}
-		});
-
-		Map<String, TopicDescription> beforeDelete = this.admin.describeTopics("test-delete-1", "test-delete-2");
-		assertThat(beforeDelete).hasSize(2);
-		assertThat(beforeDelete).containsKeys("test-delete-1", "test-delete-2");
-
-		this.admin.deleteTopics("test-delete-1", "test-delete-2");
-
-		await().atMost(10, TimeUnit.SECONDS).until(() -> {
-			try (AdminClient adminClient = AdminClient.create(this.admin.getConfigurationProperties())) {
-				DescribeTopicsResult result = adminClient.describeTopics(Arrays.asList("test-delete-1", "test-delete-2"));
-				try {
-					result.allTopicNames().get(5, TimeUnit.SECONDS);
-					return false;
-				}
-				catch (ExecutionException ex) {
-					return ex.getCause() instanceof UnknownTopicOrPartitionException;
-				}
-			}
-			catch (InterruptedException | TimeoutException e) {
-				return false;
-			}
-		});
-	}
-
-	@Test
-	void testDeleteNonExistentTopic() {
-		assertThat(org.assertj.core.api.Assertions.catchThrowable(() ->
-				this.admin.deleteTopics("non-existent-topic-12345")
-		)).isInstanceOf(org.springframework.kafka.KafkaException.class);
-	}
-
-	@Test
-	void testDeleteTopicsWithEmptyArray() {
-		this.admin.deleteTopics();
-	}
-
 	@Configuration
 	public static class Config {
 
 		@Bean
 		public EmbeddedKafkaBroker kafkaEmbedded() {
-			return new EmbeddedKafkaKraftBroker(1, 1)
+			return new EmbeddedKafkaZKBroker(3)
 					.brokerProperty("default.replication.factor", 2);
 		}
 
@@ -472,15 +395,13 @@ public class KafkaAdminTests {
 		public NewTopics topics456() {
 			return new NewTopics(
 					TopicBuilder.name("optBoth")
-							.replicas(1)  // Explicitly set to 1 replica
-							.build(),
+						.build(),
 					TopicBuilder.name("optPart")
-							.replicas(1)  // Already correct
-							.build(),
+						.replicas(1)
+						.build(),
 					TopicBuilder.name("optRepl")
-							.partitions(3)
-							.replicas(1)  // Explicitly set to 1 replica
-							.build());
+						.partitions(3)
+						.build());
 		}
 
 		@Bean

@@ -20,11 +20,11 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.listener.AcknowledgingConsumerAwareMessageListener;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -82,7 +82,7 @@ public class FilteringMessageListenerAdapter<K, V>
 
 	@Override
 	public void onMessage(ConsumerRecord<K, V> consumerRecord, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer) {
+			Consumer<?, ?> consumer) {
 
 		if (!filter(consumerRecord)) {
 			switch (this.delegateType) {
@@ -128,12 +128,12 @@ public class FilteringMessageListenerAdapter<K, V>
 	}
 
 	@Override
-	public void onMessage(ConsumerRecord<K, V> data, @Nullable Acknowledgment acknowledgment) {
+	public void onMessage(ConsumerRecord<K, V> data, Acknowledgment acknowledgment) {
 		onMessage(data, acknowledgment, null); // NOSONAR
 	}
 
 	@Override
-	public void onMessage(ConsumerRecord<K, V> data, @Nullable Consumer<?, ?> consumer) {
+	public void onMessage(ConsumerRecord<K, V> data, Consumer<?, ?> consumer) {
 		onMessage(data, null, consumer);
 	}
 

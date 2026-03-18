@@ -21,7 +21,8 @@ import io.micrometer.common.docs.KeyName;
 import io.micrometer.observation.Observation.Context;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.docs.ObservationDocumentation;
-import org.jspecify.annotations.NonNull;
+
+import org.springframework.lang.NonNull;
 
 /**
  * Spring for Apache Kafka Observation for

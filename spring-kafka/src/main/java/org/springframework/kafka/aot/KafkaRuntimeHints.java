@@ -24,12 +24,9 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.message.CreateTopicsRequestData.CreatableTopic;
 import org.apache.kafka.common.protocol.Message;
-import org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever;
-import org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.AppInfoParser.AppInfo;
 import org.apache.kafka.common.utils.ImplicitLinkedHashCollection;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aot.hint.MemberCategory;
@@ -60,11 +57,12 @@ import org.springframework.kafka.support.serializer.DelegatingByTypeSerializer;
 import org.springframework.kafka.support.serializer.DelegatingDeserializer;
 import org.springframework.kafka.support.serializer.DelegatingSerializer;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.support.serializer.ParseStringDeserializer;
 import org.springframework.kafka.support.serializer.StringOrBytesSerializer;
 import org.springframework.kafka.support.serializer.ToStringSerializer;
+import org.springframework.lang.Nullable;
 
 /**
  * {@link RuntimeHintsRegistrar} for Spring for Apache Kafka.
@@ -76,67 +74,66 @@ import org.springframework.kafka.support.serializer.ToStringSerializer;
  */
 public class KafkaRuntimeHints implements RuntimeHintsRegistrar {
 
+	@SuppressWarnings("deprecation")
 	@Override
-	@SuppressWarnings("removal")
 	public void registerHints(RuntimeHints hints, @Nullable ClassLoader classLoader) {
 		ReflectionHints reflectionHints = hints.reflection();
 		Stream.of(
-						ConsumerProperties.class,
-						ContainerProperties.class,
-						KafkaMessageHeaderAccessor.class,
-						ProducerListener.class)
+					ConsumerProperties.class,
+					ContainerProperties.class,
+					KafkaMessageHeaderAccessor.class,
+					ProducerListener.class)
 				.forEach(type -> reflectionHints.registerType(type,
 						builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS)));
 
 		Stream.of(
-						// Following Kafka classes need to be ideally part of Oracle's reachability metadata repository.
-						DefaultJwtRetriever.class,
-						DefaultJwtValidator.class,
-						Message.class,
-						ImplicitLinkedHashCollection.Element.class,
-						NewTopic.class,
-						AbstractKafkaListenerContainerFactory.class,
-						ConcurrentKafkaListenerContainerFactory.class,
-						KafkaListenerContainerFactory.class,
-						KafkaListenerEndpointRegistry.class,
-						DefaultKafkaConsumerFactory.class,
-						DefaultKafkaProducerFactory.class,
-						KafkaAdmin.class,
-						KafkaOperations.class,
-						KafkaResourceFactory.class,
-						KafkaTemplate.class,
-						ProducerFactory.class,
-						ConsumerFactory.class,
-						LoggingProducerListener.class,
-						KafkaListenerAnnotationBeanPostProcessor.class)
+					Message.class,
+					ImplicitLinkedHashCollection.Element.class,
+					NewTopic.class,
+					AbstractKafkaListenerContainerFactory.class,
+					ConcurrentKafkaListenerContainerFactory.class,
+					KafkaListenerContainerFactory.class,
+					KafkaListenerEndpointRegistry.class,
+					DefaultKafkaConsumerFactory.class,
+					DefaultKafkaProducerFactory.class,
+					KafkaAdmin.class,
+					KafkaOperations.class,
+					KafkaResourceFactory.class,
+					KafkaTemplate.class,
+					ProducerFactory.class,
+					ConsumerFactory.class,
+					LoggingProducerListener.class,
+					KafkaListenerAnnotationBeanPostProcessor.class)
 				.forEach(type -> reflectionHints.registerType(type,
 						builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
-								MemberCategory.INVOKE_DECLARED_METHODS)));
+								MemberCategory.INVOKE_DECLARED_METHODS,
+								MemberCategory.INTROSPECT_PUBLIC_METHODS)));
 
 		Stream.of(
-						KafkaBootstrapConfiguration.class,
-						CreatableTopic.class)
+					KafkaBootstrapConfiguration.class,
+					CreatableTopic.class)
 				.forEach(type -> reflectionHints.registerType(type,
 						builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS)));
 
 		Stream.of(
-						AppInfo.class,
-						// standard serialization
-						// Spring serialization
-						DelegatingByTopicDeserializer.class,
-						DelegatingByTypeSerializer.class,
-						DelegatingDeserializer.class,
-						ErrorHandlingDeserializer.class,
-						DelegatingSerializer.class,
-						org.springframework.kafka.support.serializer.JsonDeserializer.class,
-						org.springframework.kafka.support.serializer.JsonSerializer.class,
-						JacksonJsonDeserializer.class,
-						JacksonJsonSerializer.class,
-						ParseStringDeserializer.class,
-						StringOrBytesSerializer.class,
-						ToStringSerializer.class,
-						Serdes.class,
-						CRC32C.class)
+					AppInfo.class,
+					// standard partitioners
+					org.apache.kafka.clients.producer.internals.DefaultPartitioner.class,
+					org.apache.kafka.clients.producer.UniformStickyPartitioner.class,
+					// standard serialization
+					// Spring serialization
+					DelegatingByTopicDeserializer.class,
+					DelegatingByTypeSerializer.class,
+					DelegatingDeserializer.class,
+					ErrorHandlingDeserializer.class,
+					DelegatingSerializer.class,
+					JsonDeserializer.class,
+					JsonSerializer.class,
+					ParseStringDeserializer.class,
+					StringOrBytesSerializer.class,
+					ToStringSerializer.class,
+					Serdes.class,
+					CRC32C.class)
 				.forEach(type -> reflectionHints.registerType(type, builder ->
 						builder.withMembers(MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS)));
 
@@ -144,12 +141,12 @@ public class KafkaRuntimeHints implements RuntimeHintsRegistrar {
 		hints.proxies().registerJdkProxy(AopProxyUtils.completeJdkProxyInterfaces(Producer.class));
 
 		Stream.of(
-						"sun.security.provider.ConfigFile",
-						"org.apache.kafka.streams.processor.internals.assignment.StickyTaskAssignor",
-						"org.apache.kafka.streams.processor.internals.assignment.FallbackPriorTaskAssignor",
-						"org.apache.kafka.streams.errors.LogAndFailProcessingExceptionHandler")
-				.forEach(type -> reflectionHints.registerTypeIfPresent(classLoader, type, builder ->
-						builder.withMembers(MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS)));
+				"sun.security.provider.ConfigFile",
+				"org.apache.kafka.streams.processor.internals.assignment.StickyTaskAssignor",
+				"org.apache.kafka.streams.processor.internals.assignment.FallbackPriorTaskAssignor",
+				"org.apache.kafka.streams.errors.LogAndFailProcessingExceptionHandler")
+			.forEach(type -> reflectionHints.registerTypeIfPresent(classLoader, type, builder ->
+					builder.withMembers(MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS)));
 	}
 
 }

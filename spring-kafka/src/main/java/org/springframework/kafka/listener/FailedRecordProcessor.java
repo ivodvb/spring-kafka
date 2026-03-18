@@ -22,10 +22,10 @@ import java.util.function.BiFunction;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
@@ -41,10 +41,10 @@ public abstract class FailedRecordProcessor extends ExceptionClassifier implemen
 
 	private static final BackOff NO_RETRIES_OR_DELAY_BACKOFF = new FixedBackOff(0L, 0L);
 
-	private final BiFunction<ConsumerRecord<?, ?>, @Nullable Exception, BackOff> noRetriesForClassified =
+	private final BiFunction<ConsumerRecord<?, ?>, Exception, BackOff> noRetriesForClassified =
 			(rec, ex) -> {
 				Exception theEx = ErrorHandlingUtils.unwrapIfNeeded(ex);
-				if (!getExceptionMatcher().match(theEx) || theEx instanceof KafkaBackoffException) {
+				if (!getClassifier().classify(theEx) || theEx instanceof KafkaBackoffException) {
 					return NO_RETRIES_OR_DELAY_BACKOFF;
 				}
 				return this.userBackOffFunction.apply(rec, ex);

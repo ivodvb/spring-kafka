@@ -16,12 +16,10 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
 import java.util.Collection;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 /**
  * An event published when a consumer is stopped. While it is best practice to use
@@ -35,12 +33,11 @@ import org.jspecify.annotations.Nullable;
  */
 public class ConsumerStoppingEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
-	private transient final Consumer<?, ?> consumer;
+	private transient Consumer<?, ?> consumer;
 
-	private transient final @Nullable Collection<TopicPartition> partitions;
+	private transient Collection<TopicPartition> partitions;
 
 	/**
 	 * Construct an instance with the provided source, consumer and partitions.
@@ -51,7 +48,7 @@ public class ConsumerStoppingEvent extends KafkaEvent {
 	 * @since 2.2.1
 	 */
 	public ConsumerStoppingEvent(Object source, Object container,
-			Consumer<?, ?> consumer, @Nullable Collection<TopicPartition> partitions) {
+			Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
 		super(source, container);
 		this.consumer = consumer;
 		this.partitions = partitions;
@@ -61,7 +58,7 @@ public class ConsumerStoppingEvent extends KafkaEvent {
 		return this.consumer;
 	}
 
-	public @Nullable Collection<TopicPartition> getPartitions() {
+	public Collection<TopicPartition> getPartitions() {
 		return this.partitions;
 	}
 

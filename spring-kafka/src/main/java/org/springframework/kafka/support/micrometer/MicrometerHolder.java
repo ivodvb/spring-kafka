@@ -24,10 +24,10 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Builder;
 import io.micrometer.core.instrument.Timer.Sample;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -43,7 +43,6 @@ public final class MicrometerHolder {
 
 	private final Map<String, Timer> meters = new ConcurrentHashMap<>();
 
-	@SuppressWarnings("NullAway.Init")
 	private final MeterRegistry registry;
 
 	private final String timerName;
@@ -52,7 +51,7 @@ public final class MicrometerHolder {
 
 	private final String name;
 
-	private final Function<@Nullable Object, Map<String, String>> tagsProvider;
+	private final Function<Object, Map<String, String>> tagsProvider;
 
 	/**
 	 * Create an instance with the provided properties.
@@ -64,21 +63,19 @@ public final class MicrometerHolder {
 	 * @since 2.9.7
 	 */
 	public MicrometerHolder(@Nullable ApplicationContext context, String name,
-			String timerName, String timerDesc, Function<@Nullable Object, Map<String, String>> tagsProvider) {
+			String timerName, String timerDesc, Function<Object, Map<String, String>> tagsProvider) {
 
 		Assert.notNull(tagsProvider, "'tagsProvider' cannot be null");
 		if (context == null) {
 			throw new IllegalStateException("No micrometer registry present");
 		}
-		MeterRegistry meterRegistry;
 		try {
-			meterRegistry = context.getBeanProvider(MeterRegistry.class).getIfUnique();
+			this.registry = context.getBeanProvider(MeterRegistry.class).getIfUnique();
 		}
 		catch (NoUniqueBeanDefinitionException ex) {
 			throw new IllegalStateException(ex);
 		}
-		if (meterRegistry != null) {
-			this.registry = meterRegistry;
+		if (this.registry != null) {
 			this.timerName = timerName;
 			this.timerDesc = timerDesc;
 			this.name = name;
@@ -171,9 +168,7 @@ public final class MicrometerHolder {
 	 * Remove the timers.
 	 */
 	public void destroy() {
-		if (this.registry != null) {
-			this.meters.values().forEach(this.registry::remove);
-		}
+		this.meters.values().forEach(this.registry::remove);
 		this.meters.clear();
 	}
 

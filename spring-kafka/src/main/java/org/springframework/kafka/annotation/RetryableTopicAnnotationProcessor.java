@@ -27,17 +27,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.context.expression.StandardBeanExpressionResolver;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.retrytopic.ExceptionBasedDltDestination;
 import org.springframework.kafka.retrytopic.RetryTopicBeanNames;
@@ -46,6 +46,13 @@ import org.springframework.kafka.retrytopic.RetryTopicConfigurationBuilder;
 import org.springframework.kafka.retrytopic.RetryTopicConfigurer;
 import org.springframework.kafka.retrytopic.RetryTopicConstants;
 import org.springframework.kafka.support.EndpointHandlerMethod;
+import org.springframework.lang.Nullable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.backoff.ExponentialRandomBackOffPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.backoff.SleepingBackOffPolicy;
+import org.springframework.retry.backoff.UniformRandomBackOffPolicy;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -60,7 +67,6 @@ import org.springframework.util.StringUtils;
  * @author Adrian Chlebosz
  * @author Wang Zhiyang
  * @author Artem Bilan
- * @author Ngoc Nhan
  *
  * @since 2.7
  *
@@ -148,7 +154,7 @@ public class RetryableTopicAnnotationProcessor {
 			autoStartDlt = resolveExpressionAsBoolean(annotation.autoStartDltHandler(), "autoStartDltContainer");
 		}
 		RetryTopicConfigurationBuilder builder = RetryTopicConfigurationBuilder.newInstance()
-				.customBackoff(createBackOffFactory().createFromAnnotation(annotation.backOff()))
+				.customBackoff(createBackoffFromAnnotation(annotation.backoff(), this.beanFactory))
 				.retryTopicSuffix(resolveExpressionAsString(annotation.retryTopicSuffix(), "retryTopicSuffix"))
 				.dltSuffix(resolveExpressionAsString(annotation.dltTopicSuffix(), "dltTopicSuffix"))
 				.dltHandlerMethod(getDltProcessor(clazz, bean))
@@ -178,8 +184,50 @@ public class RetryableTopicAnnotationProcessor {
 		return builder.create(getKafkaTemplate(resolveExpressionAsString(annotation.kafkaTemplate(), "kafkaTemplate"), topics));
 	}
 
-	private BackOffFactory createBackOffFactory() {
-		return new BackOffFactory(this.resolver, this.expressionContext);
+	private SleepingBackOffPolicy<?> createBackoffFromAnnotation(Backoff backoff, @Nullable BeanFactory beanFactory) { // NOSONAR
+		StandardEvaluationContext evaluationContext = new StandardEvaluationContext();
+		if (beanFactory != null) {
+			evaluationContext.setBeanResolver(new BeanFactoryResolver(beanFactory));
+		}
+
+		// Code from Spring Retry
+		Long min = backoff.delay() == 0 ? backoff.value() : backoff.delay();
+		if (StringUtils.hasText(backoff.delayExpression())) {
+			min = resolveExpressionAsLong(backoff.delayExpression(), "delayExpression", true);
+		}
+		Long max = backoff.maxDelay();
+		if (StringUtils.hasText(backoff.maxDelayExpression())) {
+			max = resolveExpressionAsLong(backoff.maxDelayExpression(), "maxDelayExpression", true);
+		}
+		Double multiplier = backoff.multiplier();
+		if (StringUtils.hasText(backoff.multiplierExpression())) {
+			multiplier = resolveExpressionAsDouble(backoff.multiplierExpression(), "multiplierExpression", true);
+		}
+		if (multiplier != null && multiplier > 0) {
+			ExponentialBackOffPolicy policy = new ExponentialBackOffPolicy();
+			if (backoff.random()) {
+				policy = new ExponentialRandomBackOffPolicy();
+			}
+			if (min != null) {
+				policy.setInitialInterval(min);
+			}
+			policy.setMultiplier(multiplier);
+			if (max != null && min != null && max > min) {
+				policy.setMaxInterval(max);
+			}
+			return policy;
+		}
+		if (max != null && min != null && max > min) {
+			UniformRandomBackOffPolicy policy = new UniformRandomBackOffPolicy();
+			policy.setMinBackOffPeriod(min);
+			policy.setMaxBackOffPeriod(max);
+			return policy;
+		}
+		FixedBackOffPolicy policy = new FixedBackOffPolicy();
+		if (min != null) {
+			policy.setBackOffPeriod(min);
+		}
+		return policy;
 	}
 
 	private Map<String, Set<Class<? extends Throwable>>> createDltRoutingSpecFromAnnotation(ExceptionBasedDltDestination[] routingRules) {
@@ -294,6 +342,28 @@ public class RetryableTopicAnnotationProcessor {
 		else if (resolved != null || required) {
 			throw new IllegalStateException(
 					THE_OSQ + attribute + "] must resolve to an Number or a String that can be parsed as a Long. "
+							+ RESOLVED_TO_OSQ + (resolved == null ? NULL : resolved.getClass())
+									+ CSQ_FOR_OSQ + value + CSQ);
+		}
+		return result;
+	}
+
+	@SuppressWarnings("SameParameterValue")
+	@Nullable
+	private Double resolveExpressionAsDouble(String value, String attribute, boolean required) {
+		Object resolved = resolveExpression(value);
+		Double result = null;
+		if (resolved instanceof String str) {
+			if (required || StringUtils.hasText(str)) {
+				result = Double.parseDouble(str);
+			}
+		}
+		else if (resolved instanceof Number num) {
+			result = num.doubleValue();
+		}
+		else if (resolved != null || required) {
+			throw new IllegalStateException(
+					THE_OSQ + attribute + "] must resolve to an Number or a String that can be parsed as a Double. "
 							+ RESOLVED_TO_OSQ + (resolved == null ? NULL : resolved.getClass())
 									+ CSQ_FOR_OSQ + value + CSQ);
 		}

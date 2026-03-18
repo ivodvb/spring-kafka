@@ -71,7 +71,7 @@ public class DelegatingByTopicSerializer extends DelegatingByTopicSerialization<
 		throw new UnsupportedOperationException();
 	}
 
-	@SuppressWarnings({"unchecked", "NullAway"}) // Dataflow analysis limitation
+	@SuppressWarnings("unchecked")
 	@Override
 	public byte[] serialize(String topic, Headers headers, Object data) {
 		if (data == null) {

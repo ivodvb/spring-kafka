@@ -60,7 +60,7 @@ class DeliveryAttemptAwareRetryListenerTests {
 		map.put(tpForTopicA, topicARecords);
 		map.put(tpForTopicB, topicBRecords);
 
-		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map, Map.of());
+		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map);
 		final DeliveryAttemptAwareRetryListener listener = new DeliveryAttemptAwareRetryListener();
 		Exception ex = new RuntimeException("Dummy Exception");
 
@@ -108,7 +108,7 @@ class DeliveryAttemptAwareRetryListenerTests {
 		map.put(tpForTopicA, topicARecords);
 		map.put(tpForTopicB, topicBRecords);
 
-		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map, Map.of());
+		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map);
 		final DeliveryAttemptAwareRetryListener listener = new DeliveryAttemptAwareRetryListener();
 		Exception ex = new RuntimeException("Dummy Exception");
 

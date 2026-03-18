@@ -30,18 +30,17 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.utils.Bytes;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.core.log.LogMessage;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.JacksonPresent;
-import org.springframework.kafka.support.JsonKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.support.serializer.SerializationUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
@@ -67,12 +66,10 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Hope Kim
  * @author Borahm Lee
  * @author Artem Bilan
- * @author Soby Chacko
  * @author George Mahfoud
  *
  * @since 1.1
  */
-@SuppressWarnings("removal")
 public class BatchMessagingMessageConverter implements BatchMessageConverter {
 
 	protected final LogAccessor logger = new LogAccessor(getClass()); // NOSONAR
@@ -84,7 +81,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 
 	private boolean generateTimestamp = false;
 
-	private @Nullable KafkaHeaderMapper headerMapper;
+	private KafkaHeaderMapper headerMapper;
 
 	private boolean rawRecordHeader;
 
@@ -104,10 +101,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 	 */
 	public BatchMessagingMessageConverter(@Nullable RecordMessageConverter recordConverter) {
 		this.recordConverter = recordConverter;
-		if (JacksonPresent.isJackson3Present()) {
-			this.headerMapper = new JsonKafkaHeaderMapper();
-		}
-		else if (JacksonPresent.isJackson2Present()) {
+		if (JacksonPresent.isJackson2Present()) {
 			this.headerMapper = new DefaultKafkaHeaderMapper();
 		}
 	}
@@ -169,7 +163,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 
 	@Override // NOSONAR
 	public Message<?> toMessage(List<ConsumerRecord<?, ?>> records, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer, Type type) {
+			Consumer<?, ?> consumer, Type type) {
 
 		KafkaMessageHeaders kafkaMessageHeaders =
 				new KafkaMessageHeaders(this.generateMessageId, this.generateTimestamp);
@@ -254,7 +248,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 		}
 	}
 
-	private @Nullable Object obtainPayload(Type type, ConsumerRecord<?, ?> record, List<ConversionException> conversionFailures) {
+	private Object obtainPayload(Type type, ConsumerRecord<?, ?> record, List<ConversionException> conversionFailures) {
 		return this.recordConverter == null || !containerType(type)
 				? extractAndConvertValue(record, type)
 				: convert(record, type, conversionFailures);
@@ -262,9 +256,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 
 	private Map<String, Object> convertHeaders(Headers headers, List<Map<String, Object>> convertedHeaders) {
 		Map<String, Object> converted = new HashMap<>();
-		if (this.headerMapper != null) {
-			this.headerMapper.toHeaders(headers, converted);
-		}
+		this.headerMapper.toHeaders(headers, converted);
 		convertedHeaders.add(converted);
 		return converted;
 	}
@@ -293,7 +285,7 @@ public class BatchMessagingMessageConverter implements BatchMessageConverter {
 	 * @param conversionFailures Conversion failures.
 	 * @return the converted payload, potentially further processed by a {@link SmartMessageConverter}.
 	 */
-	protected @Nullable Object convert(ConsumerRecord<?, ?> record, Type type, List<ConversionException> conversionFailures) {
+	protected Object convert(ConsumerRecord<?, ?> record, Type type, List<ConversionException> conversionFailures) {
 		try {
 			if (this.recordConverter != null) {
 				Type actualType = ((ParameterizedType) type).getActualTypeArguments()[0];

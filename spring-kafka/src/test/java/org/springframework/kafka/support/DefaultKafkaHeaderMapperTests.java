@@ -31,12 +31,9 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import org.springframework.core.log.LogAccessor;
-import org.springframework.kafka.retrytopic.RetryTopicHeaders;
-import org.springframework.kafka.support.JsonKafkaHeaderMapper.NonTrustedHeaderType;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper.NonTrustedHeaderType;
 import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.kafka.support.serializer.SerializationTestUtils;
 import org.springframework.kafka.support.serializer.SerializationUtils;
@@ -59,16 +56,15 @@ import static org.mockito.Mockito.verify;
  * @author Gary Russell
  * @author Artem Bilan
  * @author Soby Chacko
- * @author Sanghyeok An
  *
  * @since 1.3
  *
  */
-public class JsonKafkaHeaderMapperTests {
+public class DefaultKafkaHeaderMapperTests {
 
 	@Test
 	void testTrustedAndNot() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		mapper.addToStringClasses(Bar.class.getName());
 		MimeType utf8Text = new MimeType(MimeTypeUtils.TEXT_PLAIN, StandardCharsets.UTF_8);
 		Message<String> message = MessageBuilder.withPayload("foo")
@@ -141,7 +137,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void testDeserializedNonTrusted() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Message<String> message = MessageBuilder.withPayload("foo")
 				.setHeader("fix", new Foo())
 				.build();
@@ -172,8 +168,8 @@ public class JsonKafkaHeaderMapperTests {
 	}
 
 	@Test
-	void testTrustedPackages() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+	void testMimeTypeInHeaders() {
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		MessageHeaders headers = new MessageHeaders(
 				Collections.singletonMap("foo",
 						Arrays.asList(MimeType.valueOf("application/json"), MimeType.valueOf("text/plain"))));
@@ -190,7 +186,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void testSpecificStringConvert() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Map<String, Boolean> rawMappedHeaders = new HashMap<>();
 		rawMappedHeaders.put("thisOnesAString", true);
 		rawMappedHeaders.put("thisOnesBytes", false);
@@ -216,7 +212,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void testJsonStringConvert() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Map<String, Boolean> rawMappedHeaders = new HashMap<>();
 		rawMappedHeaders.put("thisOnesBytes", false);
 		mapper.setRawMappedHeaders(rawMappedHeaders);
@@ -229,7 +225,7 @@ public class JsonKafkaHeaderMapperTests {
 		Headers target = new RecordHeaders();
 		mapper.fromHeaders(headers, target);
 		assertThat(target).containsExactlyInAnyOrder(
-				new RecordHeader(JsonKafkaHeaderMapper.JSON_TYPES,
+				new RecordHeader(DefaultKafkaHeaderMapper.JSON_TYPES,
 						("{\"thisOnesEmpty\":\"java.lang.String\","
 								+ "\"thisOnesAString\":\"java.lang.String\"}").getBytes()),
 				new RecordHeader("thisOnesAString", "foo".getBytes()),
@@ -237,7 +233,7 @@ public class JsonKafkaHeaderMapperTests {
 				new RecordHeader("thisOnesEmpty", "".getBytes()),
 				new RecordHeader("thisOnesBytes", "bar".getBytes()));
 		headersMap.clear();
-		target.add(new RecordHeader(JsonKafkaHeaderMapper.JSON_TYPES,
+		target.add(new RecordHeader(DefaultKafkaHeaderMapper.JSON_TYPES,
 				("{\"thisOnesEmpty\":\"java.lang.String\","
 						+ "\"thisOnesAString\":\"java.lang.String\","
 						+ "\"backwardCompatible\":\"java.lang.String\"}").getBytes()));
@@ -254,7 +250,7 @@ public class JsonKafkaHeaderMapperTests {
 		target = new RecordHeaders();
 		mapper.fromHeaders(headers, target);
 		assertThat(target).containsExactlyInAnyOrder(
-				new RecordHeader(JsonKafkaHeaderMapper.JSON_TYPES,
+				new RecordHeader(DefaultKafkaHeaderMapper.JSON_TYPES,
 						("{\"thisOnesEmpty\":\"java.lang.String\","
 								+ "\"thisOnesAString\":\"java.lang.String\"}").getBytes()),
 				new RecordHeader("thisOnesAString", "\"foo\"".getBytes()),
@@ -265,7 +261,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void testAlwaysStringConvert() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		mapper.setMapAllStringsOut(true);
 		Map<String, Boolean> rawMappedHeaders = new HashMap<>();
 		rawMappedHeaders.put("thisOnesBytes", false);
@@ -291,7 +287,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void deliveryAttempt() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		byte[] delivery = new byte[4];
 		ByteBuffer.wrap(delivery).putInt(42);
 		Headers headers = new RecordHeaders(new Header[] { new RecordHeader(KafkaHeaders.DELIVERY_ATTEMPT, delivery) });
@@ -305,7 +301,7 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void listenerInfo() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Headers headers = new RecordHeaders(
 				new Header[] { new RecordHeader(KafkaHeaders.LISTENER_INFO, "info".getBytes()) });
 		Map<String, Object> springHeaders = new HashMap<>();
@@ -318,8 +314,8 @@ public class JsonKafkaHeaderMapperTests {
 
 	@Test
 	void inboundJson() {
-		JsonKafkaHeaderMapper outboundMapper = new JsonKafkaHeaderMapper();
-		JsonKafkaHeaderMapper inboundMapper = JsonKafkaHeaderMapper.forInboundOnlyWithMatchers("!fo*", "*");
+		DefaultKafkaHeaderMapper outboundMapper = new DefaultKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper inboundMapper = DefaultKafkaHeaderMapper.forInboundOnlyWithMatchers("!fo*", "*");
 		HashMap<String, Object> map = new HashMap<>();
 		map.put("foo", "bar");
 		map.put("foa", "bar");
@@ -337,262 +333,21 @@ public class JsonKafkaHeaderMapperTests {
 	}
 
 	@Test
-	void multiValueHeaderToTest() {
-		// GIVEN
-		String multiValueHeader1 = "test-multi-value1";
-		byte[] multiValueHeader1Value1 = { 0, 0, 0, 0 };
-		byte[] multiValueHeader1Value2 = { 0, 0, 0, 1 };
-		byte[] multiValueHeader1Value3 = { 0, 0, 0, 2 };
-		byte[] multiValueHeader1Value4 = { 0, 0, 0, 3 };
-
-		String multiValueHeader2 = "test-multi-value2";
-		byte[] multiValueHeader2Value1 = { 0, 0, 0, 4 };
-		byte[] multiValueHeader2Value2 = { 0, 0, 0, 5 };
-
-		String multiValueWildCardHeader1 = "test-wildcard-value1";
-		byte[] multiValueWildCardHeader1Value1 = { 0, 0, 0, 6 };
-		byte[] multiValueWildCardHeader1Value2 = { 0, 0, 0, 7 };
-
-		String multiValueWildCardHeader2 = "test-wildcard-value2";
-		byte[] multiValueWildCardHeader2Value1 = { 0, 0, 0, 8 };
-		byte[] multiValueWildCardHeader2Value2 = { 0, 0, 0, 9 };
-
-		String singleValueHeader = "test-single-value1";
-		byte[] singleValueHeaderValue = { 0, 0, 0, 6 };
-
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
-		mapper.setMultiValueHeaderPatterns(multiValueHeader1, multiValueHeader2, "test-wildcard-*");
-
-		Headers rawHeaders = new RecordHeaders();
-
-		byte[] deliveryAttemptHeaderValue = { 0, 0, 0, 1 };
-		byte[] originalOffsetHeaderValue = { 0, 0, 0, 1 };
-		byte[] defaultHeaderAttemptsValues = { 0, 0, 0, 5 };
-
-		rawHeaders.add(KafkaHeaders.DELIVERY_ATTEMPT, deliveryAttemptHeaderValue);
-		rawHeaders.add(KafkaHeaders.ORIGINAL_OFFSET, originalOffsetHeaderValue);
-		rawHeaders.add(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, defaultHeaderAttemptsValues);
-		rawHeaders.add(singleValueHeader, singleValueHeaderValue);
-
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value1);
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value2);
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value3);
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value4);
-
-		rawHeaders.add(multiValueHeader2, multiValueHeader2Value1);
-		rawHeaders.add(multiValueHeader2, multiValueHeader2Value2);
-
-		rawHeaders.add(multiValueWildCardHeader1, multiValueWildCardHeader1Value1);
-		rawHeaders.add(multiValueWildCardHeader1, multiValueWildCardHeader1Value2);
-		rawHeaders.add(multiValueWildCardHeader2, multiValueWildCardHeader2Value1);
-		rawHeaders.add(multiValueWildCardHeader2, multiValueWildCardHeader2Value2);
-
-		// WHEN
-		Map<String, Object> mappedHeaders = new HashMap<>();
-		mapper.toHeaders(rawHeaders, mappedHeaders);
-
-		// THEN
-		assertThat(mappedHeaders.get(KafkaHeaders.DELIVERY_ATTEMPT)).isEqualTo(1);
-		assertThat(mappedHeaders.get(KafkaHeaders.ORIGINAL_OFFSET)).isEqualTo(originalOffsetHeaderValue);
-		assertThat(mappedHeaders.get(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS)).isEqualTo(defaultHeaderAttemptsValues);
-		assertThat(mappedHeaders.get(singleValueHeader)).isEqualTo(singleValueHeaderValue);
-
-		assertThat(mappedHeaders)
-				.extractingByKey(multiValueHeader1, InstanceOfAssertFactories.list(byte[].class))
-				.containsExactly(multiValueHeader1Value1, multiValueHeader1Value2,
-								multiValueHeader1Value3, multiValueHeader1Value4);
-
-		assertThat(mappedHeaders)
-				.extractingByKey(multiValueHeader2, InstanceOfAssertFactories.list(byte[].class))
-				.containsExactly(multiValueHeader2Value1, multiValueHeader2Value2);
-
-		assertThat(mappedHeaders)
-				.extractingByKey(multiValueWildCardHeader1, InstanceOfAssertFactories.list(byte[].class))
-				.containsExactly(multiValueWildCardHeader1Value1, multiValueWildCardHeader1Value2);
-
-		assertThat(mappedHeaders)
-				.extractingByKey(multiValueWildCardHeader2, InstanceOfAssertFactories.list(byte[].class))
-				.containsExactly(multiValueWildCardHeader2Value1, multiValueWildCardHeader2Value2);
-	}
-
-	@ParameterizedTest
-	@ValueSource(ints = {500, 1000, 2000})
-	void hugeNumberOfSingleValueHeaderToTest(int numberOfSingleValueHeaderCount) {
-		// GIVEN
-		Headers rawHeaders = new RecordHeaders();
-
-		String multiValueHeader1 = "test-multi-value1";
-		byte[] multiValueHeader1Value1 = { 0, 0, 0, 0 };
-		byte[] multiValueHeader1Value2 = { 0, 0, 0, 1 };
-
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value1);
-		rawHeaders.add(multiValueHeader1, multiValueHeader1Value2);
-
-		byte[] deliveryAttemptHeaderValue = { 0, 0, 0, 1 };
-		byte[] originalOffsetHeaderValue = { 0, 0, 0, 2 };
-		byte[] defaultHeaderAttemptsValues = { 0, 0, 0, 5 };
-
-		rawHeaders.add(KafkaHeaders.DELIVERY_ATTEMPT, deliveryAttemptHeaderValue);
-		rawHeaders.add(KafkaHeaders.ORIGINAL_OFFSET, originalOffsetHeaderValue);
-		rawHeaders.add(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, defaultHeaderAttemptsValues);
-
-		byte[] singleValueHeaderValue = { 0, 0, 0, 6 };
-		for (int i = 0; i < numberOfSingleValueHeaderCount; i++) {
-			String singleValueHeader = "test-single-value" + i;
-			rawHeaders.add(singleValueHeader, singleValueHeaderValue);
-		}
-
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
-		mapper.setMultiValueHeaderPatterns(multiValueHeader1);
-
-		// WHEN
-		Map<String, Object> mappedHeaders = new HashMap<>();
-		mapper.toHeaders(rawHeaders, mappedHeaders);
-
-		// THEN
-		assertThat(mappedHeaders.get(KafkaHeaders.DELIVERY_ATTEMPT)).isEqualTo(1);
-		assertThat(mappedHeaders.get(KafkaHeaders.ORIGINAL_OFFSET)).isEqualTo(originalOffsetHeaderValue);
-		assertThat(mappedHeaders.get(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS)).isEqualTo(defaultHeaderAttemptsValues);
-
-		for (int i = 0; i < numberOfSingleValueHeaderCount; i++) {
-			String singleValueHeader = "test-single-value" + i;
-			assertThat(mappedHeaders.get(singleValueHeader)).isEqualTo(singleValueHeaderValue);
-		}
-
-		assertThat(mappedHeaders)
-				.extractingByKey(multiValueHeader1, InstanceOfAssertFactories.list(byte[].class))
-				.containsExactly(multiValueHeader1Value1, multiValueHeader1Value2);
-	}
-
-	@ParameterizedTest
-	@ValueSource(ints = {500, 1000, 2000})
-	void hugeNumberOfMultiValueHeaderToTest(int numberOfMultiValueHeaderCount) {
-		// GIVEN
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
-		Headers rawHeaders = new RecordHeaders();
-
-		byte[] multiValueHeader1Value1 = { 0, 0, 0, 0 };
-		byte[] multiValueHeader1Value2 = { 0, 0, 0, 1 };
-
-		for (int i = 0; i < numberOfMultiValueHeaderCount; i++) {
-			String multiValueHeader = "test-multi-value" + i;
-			mapper.setMultiValueHeaderPatterns(multiValueHeader);
-			rawHeaders.add(multiValueHeader, multiValueHeader1Value1);
-			rawHeaders.add(multiValueHeader, multiValueHeader1Value2);
-		}
-
-		byte[] deliveryAttemptHeaderValue = { 0, 0, 0, 1 };
-		byte[] originalOffsetHeaderValue = { 0, 0, 0, 2 };
-		byte[] defaultHeaderAttemptsValues = { 0, 0, 0, 5 };
-
-		rawHeaders.add(KafkaHeaders.DELIVERY_ATTEMPT, deliveryAttemptHeaderValue);
-		rawHeaders.add(KafkaHeaders.ORIGINAL_OFFSET, originalOffsetHeaderValue);
-		rawHeaders.add(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, defaultHeaderAttemptsValues);
-
-		String singleValueHeader = "test-single-value";
-		byte[] singleValueHeaderValue = { 0, 0, 0, 6 };
-		rawHeaders.add(singleValueHeader, singleValueHeaderValue);
-
-		// WHEN
-		Map<String, Object> mappedHeaders = new HashMap<>();
-		mapper.toHeaders(rawHeaders, mappedHeaders);
-
-		// THEN
-		assertThat(mappedHeaders.get(KafkaHeaders.DELIVERY_ATTEMPT)).isEqualTo(1);
-		assertThat(mappedHeaders.get(KafkaHeaders.ORIGINAL_OFFSET)).isEqualTo(originalOffsetHeaderValue);
-		assertThat(mappedHeaders.get(RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS)).isEqualTo(defaultHeaderAttemptsValues);
-		assertThat(mappedHeaders.get(singleValueHeader)).isEqualTo(singleValueHeaderValue);
-
-		for (int i = 0; i < numberOfMultiValueHeaderCount; i++) {
-			String multiValueHeader = "test-multi-value" + i;
-			assertThat(mappedHeaders)
-					.extractingByKey(multiValueHeader, InstanceOfAssertFactories.list(byte[].class))
-					.containsExactly(multiValueHeader1Value1, multiValueHeader1Value2);
-		}
-	}
-
-	@Test
-	void multiValueHeaderFromTest() {
-		// GIVEN
-		String multiValueHeader1 = "test-multi-value1";
-		byte[] multiValueHeader1Value1 = { 0, 0, 0, 1 };
-		byte[] multiValueHeader1Value2 = { 0, 0, 0, 2 };
-
-		String multiValueHeader2 = "test-multi-value2";
-		byte[] multiValueHeader2Value1 = { 0, 0, 0, 3 };
-		byte[] multiValueHeader2Value2 = { 0, 0, 0, 4 };
-
-		String multiValueHeader3 = "test-other-multi-value1";
-		byte[] multiValueHeader3Value1 = { 0, 0, 0, 9 };
-		byte[] multiValueHeader3Value2 = { 0, 0, 0, 10 };
-
-		String multiValueHeader4 = "test-prefix-match-multi";
-		byte[] multiValueHeader4Value1 = { 0, 0, 0, 11 };
-		byte[] multiValueHeader4Value2 = { 0, 0, 0, 12 };
-
-		String singleValueHeader = "test-single-value1";
-		byte[] singleValueHeaderValue1 = { 0, 0, 0, 5 };
-
-		Message<String> message = MessageBuilder
-				.withPayload("test-multi-value-header")
-				.setHeader(multiValueHeader1, List.of(multiValueHeader1Value1,
-													multiValueHeader1Value2))
-				.setHeader(multiValueHeader2, List.of(multiValueHeader2Value1,
-													multiValueHeader2Value2))
-				.setHeader(multiValueHeader3, List.of(multiValueHeader3Value1,
-													multiValueHeader3Value2))
-				.setHeader(multiValueHeader4, List.of(multiValueHeader4Value1,
-													multiValueHeader4Value2))
-				.setHeader(singleValueHeader, singleValueHeaderValue1)
-				.build();
-
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
-		mapper.setMultiValueHeaderPatterns("test-multi-*",
-											multiValueHeader3,
-											"*-prefix-match-multi*");
-
-		// WHEN
-		Headers results = new RecordHeaders();
-		mapper.fromHeaders(message.getHeaders(), results);
-
-		// THEN
-		assertThat(results.headers(multiValueHeader1))
-				.extracting(Header::value)
-				.containsExactly(multiValueHeader1Value1, multiValueHeader1Value2);
-
-		assertThat(results.headers(multiValueHeader2))
-				.extracting(Header::value)
-				.containsExactly(multiValueHeader2Value1, multiValueHeader2Value2);
-
-		assertThat(results.headers(multiValueHeader3))
-				.extracting(Header::value)
-				.containsExactly(multiValueHeader3Value1, multiValueHeader3Value2);
-
-		assertThat(results.headers(multiValueHeader4))
-				.extracting(Header::value)
-				.containsExactly(multiValueHeader4Value1, multiValueHeader4Value2);
-
-		assertThat(results.headers(singleValueHeader))
-				.extracting(Header::value)
-				.containsExactly(singleValueHeaderValue1);
-	}
-
-	@Test
 	void deserializationExceptionHeadersAreMappedAsNonByteArray() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 
 		byte[] keyDeserExceptionBytes = SerializationTestUtils.header(true);
-		Header keyHeader = SerializationTestUtils.deserializationHeader(KafkaUtils.KEY_DESERIALIZER_EXCEPTION_HEADER,
+		Header keyHeader = SerializationTestUtils.deserializationHeader(SerializationUtils.KEY_DESERIALIZER_EXCEPTION_HEADER,
 				keyDeserExceptionBytes);
 		byte[] valueDeserExceptionBytes = SerializationTestUtils.header(false);
-		Header valueHeader = SerializationTestUtils.deserializationHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER,
+		Header valueHeader = SerializationTestUtils.deserializationHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER,
 				valueDeserExceptionBytes);
 		Headers headers = new RecordHeaders(
 				new Header[] { keyHeader, valueHeader });
 		Map<String, Object> springHeaders = new HashMap<>();
 		mapper.toHeaders(headers, springHeaders);
-		assertThat(springHeaders.get(KafkaUtils.KEY_DESERIALIZER_EXCEPTION_HEADER)).isEqualTo(keyHeader);
-		assertThat(springHeaders.get(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER)).isEqualTo(valueHeader);
+		assertThat(springHeaders.get(SerializationUtils.KEY_DESERIALIZER_EXCEPTION_HEADER)).isEqualTo(keyHeader);
+		assertThat(springHeaders.get(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER)).isEqualTo(valueHeader);
 
 		LogAccessor logger = new LogAccessor(this.getClass());
 
@@ -605,13 +360,13 @@ public class JsonKafkaHeaderMapperTests {
 
 		headers = new RecordHeaders();
 		mapper.fromHeaders(new MessageHeaders(springHeaders), headers);
-		assertThat(headers.lastHeader(KafkaUtils.KEY_DESERIALIZER_EXCEPTION_HEADER)).isNull();
-		assertThat(headers.lastHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER)).isNull();
+		assertThat(headers.lastHeader(SerializationUtils.KEY_DESERIALIZER_EXCEPTION_HEADER)).isNull();
+		assertThat(headers.lastHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER)).isNull();
 	}
 
 	@Test
 	void ensureNullHeaderValueHandledGraciously() {
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 
 		Header mockHeader = mock(Header.class);
 		given(mockHeader.value()).willReturn(null);

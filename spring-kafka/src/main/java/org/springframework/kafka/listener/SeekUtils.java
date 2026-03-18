@@ -29,13 +29,13 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException.Level;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.support.KafkaUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -77,7 +77,7 @@ public final class SeekUtils {
 	 * @param logger a {@link LogAccessor} for seek errors.
 	 * @return true if the failed record was skipped.
 	 */
-	public static boolean doSeeks(List<ConsumerRecord<?, ?>> records, Consumer<?, ?> consumer, @Nullable Exception exception,
+	public static boolean doSeeks(List<ConsumerRecord<?, ?>> records, Consumer<?, ?> consumer, Exception exception,
 			boolean recoverable, BiPredicate<ConsumerRecord<?, ?>, Exception> skipper, LogAccessor logger) {
 
 		return doSeeks(records, consumer, exception, recoverable, (rec, ex, cont, cons) -> skipper.test(rec, ex), null,
@@ -95,7 +95,7 @@ public final class SeekUtils {
 	 * @param logger a {@link LogAccessor} for seek errors.
 	 * @return true if the failed record was skipped.
 	 */
-	public static boolean doSeeks(List<ConsumerRecord<?, ?>> records, Consumer<?, ?> consumer, @Nullable Exception exception,
+	public static boolean doSeeks(List<ConsumerRecord<?, ?>> records, Consumer<?, ?> consumer, Exception exception,
 			boolean recoverable, RecoveryStrategy recovery, @Nullable MessageListenerContainer container,
 			LogAccessor logger) {
 

@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.core;
 
-import org.jspecify.annotations.Nullable;
-
 /**
  * The strategy for managing transactional producer suffixes.
  *
@@ -32,13 +30,13 @@ public interface TransactionIdSuffixStrategy {
 	 * @param txIdPrefix the transaction id prefix.
 	 * @return the suffix.
 	 */
-	String acquireSuffix(@Nullable String txIdPrefix);
+	String acquireSuffix(String txIdPrefix);
 
 	/**
 	 * Release the suffix for the transactional producer.
 	 * @param txIdPrefix the transaction id prefix.
 	 * @param suffix the suffix.
 	 */
-	void releaseSuffix(@Nullable String txIdPrefix, @Nullable String suffix);
+	void releaseSuffix(String txIdPrefix, String suffix);
 
 }

@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.Message;
@@ -48,8 +47,8 @@ public interface BatchToRecordAdapter<K, V> {
 	 * @param consumer the consumer.
 	 * @param callback the callback.
 	 */
-	void adapt(List<Message<?>> messages, List<ConsumerRecord<K, V>> records, @Nullable Acknowledgment ack,
-			@Nullable Consumer<?, ?> consumer, Callback<K, V> callback);
+	void adapt(List<Message<?>> messages, List<ConsumerRecord<K, V>> records, Acknowledgment ack,
+			Consumer<?, ?> consumer, Callback<K, V> callback);
 
 	/**
 	 * A callback for each message.
@@ -67,7 +66,7 @@ public interface BatchToRecordAdapter<K, V> {
 		 * @param consumer the consumer.
 		 * @param message the message.
 		 */
-		void invoke(ConsumerRecord<K, V> record, @Nullable Acknowledgment ack, @Nullable Consumer<?, ?> consumer,
+		void invoke(ConsumerRecord<K, V> record, Acknowledgment ack, Consumer<?, ?> consumer,
 				Message<?> message);
 
 	}

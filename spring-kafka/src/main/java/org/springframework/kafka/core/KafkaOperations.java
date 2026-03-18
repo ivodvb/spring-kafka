@@ -32,10 +32,10 @@ import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 
 /**
@@ -322,7 +322,6 @@ public interface KafkaOperations<K, V> {
 	 */
 	interface OperationsCallback<K, V, T> {
 
-		@Nullable
 		T doInOperations(KafkaOperations<K, V> operations);
 
 	}

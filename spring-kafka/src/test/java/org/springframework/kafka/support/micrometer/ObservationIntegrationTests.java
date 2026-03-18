@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import io.micrometer.common.KeyValues;
 import io.micrometer.core.tck.MeterRegistryAssert;
@@ -45,7 +46,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,10 +79,10 @@ public class ObservationIntegrationTests extends SampleTestRunner {
 					.hasSize(4);
 			List<FinishedSpan> producerSpans = finishedSpans.stream()
 					.filter(span -> span.getKind().equals(Kind.PRODUCER))
-					.toList();
+					.collect(Collectors.toList());
 			List<FinishedSpan> consumerSpans = finishedSpans.stream()
 					.filter(span -> span.getKind().equals(Kind.CONSUMER))
-					.toList();
+					.collect(Collectors.toList());
 			SpanAssert.assertThat(producerSpans.get(0))
 					.hasTag("spring.kafka.template.name", "template");
 			assertThat(producerSpans.get(0).getRemoteServiceName())
@@ -119,7 +120,7 @@ public class ObservationIntegrationTests extends SampleTestRunner {
 
 		@Bean
 		EmbeddedKafkaBroker broker() {
-			return new EmbeddedKafkaKraftBroker(1, 1, "int.observation.testT1", "int.observation.testT2");
+			return new EmbeddedKafkaZKBroker(1, true, 1, "int.observation.testT1", "int.observation.testT2");
 		}
 
 		@Bean
@@ -130,7 +131,7 @@ public class ObservationIntegrationTests extends SampleTestRunner {
 
 		@Bean
 		ConsumerFactory<Integer, String> consumerFactory(EmbeddedKafkaBroker broker) {
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(broker, "obs", false);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("obs", "false", broker);
 			return new DefaultKafkaConsumerFactory<>(consumerProps);
 		}
 

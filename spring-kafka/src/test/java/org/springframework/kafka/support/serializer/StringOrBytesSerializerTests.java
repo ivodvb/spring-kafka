@@ -26,12 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * @author Gary Russell
  * @author Soby Chacko
- * @author Ngoc Nhan
  * @since 2.3
  *
  */
@@ -53,9 +51,6 @@ public class StringOrBytesSerializerTests {
 		Map<String, Object> configs = Collections.singletonMap("serializer.encoding", "UTF-16");
 		serializer.configure(configs, false);
 		assertThat(KafkaTestUtils.getPropertyValue(serializer, "stringSerializer.encoding")).isEqualTo(StandardCharsets.UTF_16);
-		assertThat(serializer.serialize("null", null)).isNull();
-		assertThatIllegalStateException().isThrownBy(() -> serializer.serialize("ex", 0))
-				.withMessage("This serializer can only handle byte[], Bytes or String values");
 	}
 
 }

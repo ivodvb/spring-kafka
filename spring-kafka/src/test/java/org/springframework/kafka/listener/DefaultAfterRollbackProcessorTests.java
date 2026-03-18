@@ -79,7 +79,7 @@ public class DefaultAfterRollbackProcessorTests {
 		IllegalStateException illegalState = new IllegalStateException();
 		@SuppressWarnings("unchecked")
 		Consumer<String, String> consumer = mock(Consumer.class);
-		given(consumer.groupMetadata()).willReturn(mock(ConsumerGroupMetadata.class));
+		given(consumer.groupMetadata()).willReturn(new ConsumerGroupMetadata("foo"));
 		MessageListenerContainer container = mock(MessageListenerContainer.class);
 		given(container.getContainerProperties()).willReturn(new ContainerProperties("foo"));
 		processor.process(records, consumer, container, illegalState, true, EOSMode.V2);
@@ -126,11 +126,11 @@ public class DefaultAfterRollbackProcessorTests {
 		Map<TopicPartition, List<ConsumerRecord<String, String>>> map = new HashMap<>();
 		records.forEach(rec -> map.computeIfAbsent(new TopicPartition(rec.topic(), rec.partition()),
 				tp -> new ArrayList<>()).add(rec));
-		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map, Map.of());
+		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<>(map);
 		IllegalStateException illegalState = new IllegalStateException();
 		@SuppressWarnings("unchecked")
 		Consumer<String, String> consumer = mock(Consumer.class);
-		given(consumer.groupMetadata()).willReturn(mock(ConsumerGroupMetadata.class));
+		given(consumer.groupMetadata()).willReturn(new ConsumerGroupMetadata("foo"));
 		MessageListenerContainer container = mock(MessageListenerContainer.class);
 		given(container.isRunning()).willReturn(true);
 		processor.processBatch(consumerRecords, records, consumer, container, illegalState, false, EOSMode.V2);

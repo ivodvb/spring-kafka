@@ -21,8 +21,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.Message;
 
@@ -39,7 +37,7 @@ import org.springframework.messaging.Message;
  */
 public class RequestReplyTypedMessageFuture<K, V, P> extends RequestReplyMessageFuture<K, V> {
 
-	RequestReplyTypedMessageFuture(@Nullable CompletableFuture<SendResult<K, V>> sendFuture) {
+	RequestReplyTypedMessageFuture(CompletableFuture<SendResult<K, V>> sendFuture) {
 		super(sendFuture);
 	}
 

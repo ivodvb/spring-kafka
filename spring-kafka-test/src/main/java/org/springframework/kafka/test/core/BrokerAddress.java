@@ -16,7 +16,7 @@
 
 package org.springframework.kafka.test.core;
 
-import org.apache.kafka.server.network.BrokerEndPoint;
+import kafka.cluster.BrokerEndPoint;
 
 import org.springframework.util.Assert;
 

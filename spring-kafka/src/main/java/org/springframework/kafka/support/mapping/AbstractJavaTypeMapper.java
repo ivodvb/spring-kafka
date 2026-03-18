@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.messaging.converter.MessageConversionException;
@@ -38,13 +37,9 @@ import org.springframework.util.ClassUtils;
  * @author Andreas Asplund
  * @author Gary Russell
  * @author Elliot Kennedy
- * @author Soby Chacko
  *
  * @since 2.1
- *
- * @deprecated since 4.0 in favor of {@link DefaultJacksonJavaTypeMapper} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
 public abstract class AbstractJavaTypeMapper implements BeanClassLoaderAware {
 
 	/**
@@ -87,7 +82,7 @@ public abstract class AbstractJavaTypeMapper implements BeanClassLoaderAware {
 
 	private String keyClassIdFieldName = DEFAULT_KEY_CLASSID_FIELD_NAME;
 
-	private @Nullable ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
+	private ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
 
 	public String getClassIdFieldName() {
 		return this.classIdFieldName;
@@ -138,7 +133,7 @@ public abstract class AbstractJavaTypeMapper implements BeanClassLoaderAware {
 		this.classLoader = classLoader;
 	}
 
-	protected @Nullable ClassLoader getClassLoader() {
+	protected ClassLoader getClassLoader() {
 		return this.classLoader;
 	}
 
@@ -160,7 +155,7 @@ public abstract class AbstractJavaTypeMapper implements BeanClassLoaderAware {
 		return classId;
 	}
 
-	protected @Nullable String retrieveHeaderAsString(Headers headers, String headerName) {
+	protected String retrieveHeaderAsString(Headers headers, String headerName) {
 		Header header = headers.lastHeader(headerName);
 		if (header != null) {
 			String classId = null;

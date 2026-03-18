@@ -35,7 +35,6 @@ public class ExponentialBackOffWithMaxRetries extends ExponentialBackOff {
 	 * the maxRetries.
 	 * @param maxRetries the max retries.
 	 */
-	@SuppressWarnings("this-escape")
 	public ExponentialBackOffWithMaxRetries(int maxRetries) {
 		this.maxRetries = maxRetries;
 		calculateMaxElapsed();
@@ -72,7 +71,6 @@ public class ExponentialBackOffWithMaxRetries extends ExponentialBackOff {
 		throw new IllegalStateException("'maxElapsedTime' is calculated from the 'maxRetries' property");
 	}
 
-	@SuppressWarnings("this-escape")
 	private void calculateMaxElapsed() {
 		long maxInterval = getMaxInterval();
 		long maxElapsed = Math.min(getInitialInterval(), maxInterval);

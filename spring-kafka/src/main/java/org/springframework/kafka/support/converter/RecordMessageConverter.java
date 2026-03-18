@@ -18,11 +18,12 @@ package org.springframework.kafka.support.converter;
 
 import java.lang.reflect.Type;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.NonNull;
 import org.springframework.messaging.Message;
 
 /**
@@ -36,14 +37,14 @@ public interface RecordMessageConverter extends MessageConverter {
 	/**
 	 * Convert a {@link ConsumerRecord} to a {@link Message}.
 	 * @param record the record.
-	 * @param acknowledgment the acknowledgment (can be Acknowledgment or ShareAcknowledgment).
-	 * @param consumer the consumer (can be Consumer or ShareConsumer).
+	 * @param acknowledgment the acknowledgment.
+	 * @param consumer the consumer
 	 * @param payloadType the required payload type.
 	 * @return the message.
 	 */
 	@NonNull
-	Message<?> toMessage(ConsumerRecord<?, ?> record, @Nullable Object acknowledgment, @Nullable Object consumer,
-			@Nullable Type payloadType);
+	Message<?> toMessage(ConsumerRecord<?, ?> record, Acknowledgment acknowledgment, Consumer<?, ?> consumer,
+			Type payloadType);
 
 	/**
 	 * Convert a message to a producer record.
@@ -51,6 +52,6 @@ public interface RecordMessageConverter extends MessageConverter {
 	 * @param defaultTopic the default topic to use if no header found.
 	 * @return the producer record.
 	 */
-	ProducerRecord<?, ?> fromMessage(Message<?> message, @Nullable String defaultTopic);
+	ProducerRecord<?, ?> fromMessage(Message<?> message, String defaultTopic);
 
 }

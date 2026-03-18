@@ -17,9 +17,9 @@
 package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.Nullable;
 
 /**
  * Listener for handling incoming Kafka messages, propagating an acknowledgment handle that recipients
@@ -35,7 +35,7 @@ import org.springframework.kafka.support.Acknowledgment;
 public interface AcknowledgingMessageListener<K, V> extends MessageListener<K, V> {
 
 	/**
-	 * Invoked with data from kafka. Containers should never call this since they
+	 * Invoked with data from kafka. Containers should never call this since it they
 	 * will detect that we are an acknowledging listener.
 	 * @param data the data to be processed.
 	 */

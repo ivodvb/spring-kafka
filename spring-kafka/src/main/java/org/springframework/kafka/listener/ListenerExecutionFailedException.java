@@ -16,9 +16,8 @@
 
 package org.springframework.kafka.listener;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.KafkaException;
+import org.springframework.lang.Nullable;
 
 /**
  * The listener specific {@link KafkaException} extension.
@@ -28,7 +27,7 @@ import org.springframework.kafka.KafkaException;
 @SuppressWarnings("serial")
 public class ListenerExecutionFailedException extends KafkaException {
 
-	private final @Nullable String groupId;
+	private final String groupId;
 
 	/**
 	 * Construct an instance with the provided properties.

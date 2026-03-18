@@ -37,7 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Tomaz Fernandes
  * @author Adrian Chlebosz
- * @author Heejin Jeon
  * @since 2.7
  */
 @ExtendWith(MockitoExtension.class)
@@ -74,8 +73,7 @@ class RetryTopicConfigurationBuilderTests {
 
 		// setup
 		RetryTopicConfigurationBuilder builder = new RetryTopicConfigurationBuilder();
-		builder.fixedBackOff(1000)
-				.sameIntervalTopicReuseStrategy(SameIntervalTopicReuseStrategy.MULTIPLE_TOPICS);
+		builder.fixedBackOff(1000);
 
 		//when
 		RetryTopicConfiguration configuration = builder.create(kafkaOperations);
@@ -93,8 +91,7 @@ class RetryTopicConfigurationBuilderTests {
 
 		// setup
 		RetryTopicConfigurationBuilder builder = new RetryTopicConfigurationBuilder();
-		builder.noBackoff()
-				.sameIntervalTopicReuseStrategy(SameIntervalTopicReuseStrategy.MULTIPLE_TOPICS);
+		builder.noBackoff();
 
 		//when
 		RetryTopicConfiguration configuration = builder.create(kafkaOperations);
@@ -110,8 +107,6 @@ class RetryTopicConfigurationBuilderTests {
 	}
 
 	@Test
-	@Deprecated
-	@SuppressWarnings("removal")
 	void shouldSetUniformRandomBackOff() {
 
 		// setup
@@ -204,7 +199,6 @@ class RetryTopicConfigurationBuilderTests {
 
 		//when
 		RetryTopicConfiguration configuration = builder
-			.sameIntervalTopicReuseStrategy(SameIntervalTopicReuseStrategy.MULTIPLE_TOPICS)
 			.dltRoutingRules(Map.of("-deserialization", Set.of(DeserializationException.class)))
 			.create(kafkaOperations);
 

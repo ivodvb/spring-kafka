@@ -18,10 +18,9 @@ package org.springframework.kafka.retrytopic;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.support.AllowDenyCollectionManager;
 import org.springframework.kafka.support.EndpointHandlerMethod;
+import org.springframework.lang.Nullable;
 
 /**
  * Contains the provided configuration for the retryable topics.
@@ -41,7 +40,7 @@ public class RetryTopicConfiguration {
 
 	private final AllowDenyCollectionManager<String> topicAllowListManager;
 
-	private final @Nullable EndpointHandlerMethod dltHandlerMethod;
+	private final EndpointHandlerMethod dltHandlerMethod;
 
 	private final TopicCreation kafkaTopicAutoCreationConfig;
 
@@ -51,7 +50,7 @@ public class RetryTopicConfiguration {
 	private final Integer concurrency;
 
 	RetryTopicConfiguration(List<DestinationTopic.Properties> destinationTopicProperties,
-							@Nullable EndpointHandlerMethod dltHandlerMethod,
+							EndpointHandlerMethod dltHandlerMethod,
 							TopicCreation kafkaTopicAutoCreationConfig,
 							AllowDenyCollectionManager<String> topicAllowListManager,
 							ListenerContainerFactoryResolver.Configuration factoryResolverConfig,
@@ -76,7 +75,7 @@ public class RetryTopicConfiguration {
 		return this.factoryResolverConfig;
 	}
 
-	public @Nullable EndpointHandlerMethod getDltHandlerMethod() {
+	public EndpointHandlerMethod getDltHandlerMethod() {
 		return this.dltHandlerMethod;
 	}
 

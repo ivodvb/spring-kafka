@@ -23,10 +23,7 @@ package org.springframework.kafka.config;
  * @author Gary Russell
  * @author Tomaz Fernandes
  */
-public final class KafkaListenerConfigUtils {
-
-	private KafkaListenerConfigUtils() {
-	}
+public abstract class KafkaListenerConfigUtils {
 
 	/**
 	 * The bean name of the internally managed Kafka listener annotation processor.

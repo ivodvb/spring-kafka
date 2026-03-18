@@ -126,7 +126,7 @@ class RetryTopicConfigurationIntegrationTests {
 		@Bean
 		ConsumerFactory<Integer, String> consumerFactory(EmbeddedKafkaBroker embeddedKafka) {
 			return new DefaultKafkaConsumerFactory<>(
-					KafkaTestUtils.consumerProps(embeddedKafka, "retryConfig", false));
+					KafkaTestUtils.consumerProps("retryConfig", "false", embeddedKafka));
 		}
 
 		@Bean
@@ -171,7 +171,7 @@ class RetryTopicConfigurationIntegrationTests {
 
 	static class CustomDLPR extends DeadLetterPublishingRecoverer {
 
-		CustomDLPR(Function<ProducerRecord<?, ?>, ? extends KafkaOperations<?, ?>> templateResolver,
+		CustomDLPR(Function<ProducerRecord<?, ?>, KafkaOperations<?, ?>> templateResolver,
 				BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> destinationResolver) {
 			super(templateResolver, destinationResolver);
 		}

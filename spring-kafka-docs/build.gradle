@@ -26,16 +26,11 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask).configur
     }
 }
 
-configurations {
-	[compileClasspath, runtimeClasspath, testCompileClasspath, testRuntimeClasspath].each {
-		it.extendsFrom(dependencyManagement)
-	}
-}
-
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter:$springBootVersion"
     implementation project (':spring-kafka')
     implementation 'org.jetbrains.kotlin:kotlin-stdlib'
-    implementation 'tools.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.core:jackson-core'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 

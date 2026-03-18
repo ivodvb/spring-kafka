@@ -84,7 +84,7 @@ public class MessagingProcessor<Kin, Vin, Kout, Vout> extends ContextualProcesso
 		message = this.function.exchange(message);
 		List<String> headerList = new ArrayList<>();
 		headers.forEach(header -> headerList.add(header.key()));
-		headerList.forEach(headers::remove);
+		headerList.forEach(name -> headers.remove(name));
 		ProducerRecord<?, ?> fromMessage = this.converter.fromMessage(message, "dummy");
 		fromMessage.headers().forEach(header -> {
 			if (!header.key().equals(KafkaHeaders.TOPIC)) {

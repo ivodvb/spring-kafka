@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
@@ -39,6 +38,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.event.ConcurrentContainerStoppedEvent;
 import org.springframework.kafka.event.ConsumerStoppedEvent.Reason;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -60,7 +60,6 @@ import org.springframework.util.Assert;
  * @author Tomaz Fernandes
  * @author Wang Zhiyang
  * @author Lokesh Alamuri
- * @author Su Ko
  */
 public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageListenerContainer<K, V> {
 
@@ -74,7 +73,7 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 
 	private boolean alwaysClientIdSuffix = true;
 
-	private volatile @Nullable Reason reason;
+	private volatile Reason reason;
 
 	/**
 	 * Construct an instance with the supplied configuration properties.
@@ -83,7 +82,7 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 	 * @param consumerFactory the consumer factory.
 	 * @param containerProperties the container properties.
 	 */
-	public ConcurrentMessageListenerContainer(@Nullable ConsumerFactory<? super K, ? super V> consumerFactory,
+	public ConcurrentMessageListenerContainer(ConsumerFactory<? super K, ? super V> consumerFactory,
 			ContainerProperties containerProperties) {
 
 		super(consumerFactory, containerProperties);
@@ -245,7 +244,7 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 		if (!isRunning()) {
 			checkTopics();
 			ContainerProperties containerProperties = getContainerProperties();
-			@Nullable TopicPartitionOffset @Nullable [] topicPartitions = containerProperties.getTopicPartitions();
+			TopicPartitionOffset[] topicPartitions = containerProperties.getTopicPartitions();
 			if (topicPartitions != null && this.concurrency > topicPartitions.length) {
 				this.logger.warn(() -> "When specific partitions are provided, the concurrency must be less than or "
 						+ "equal to the number of partitions; reduced from " + this.concurrency + " to "
@@ -303,7 +302,7 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 	}
 
 	private KafkaMessageListenerContainer<K, V> constructContainer(ContainerProperties containerProperties,
-			@Nullable TopicPartitionOffset @Nullable [] topicPartitions, int i) {
+			@Nullable TopicPartitionOffset[] topicPartitions, int i) {
 
 		KafkaMessageListenerContainer<K, V> container;
 		if (topicPartitions == null) {
@@ -316,29 +315,32 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 		return container;
 	}
 
-	private @Nullable TopicPartitionOffset @Nullable [] partitionSubset(ContainerProperties containerProperties, int index) {
-		@Nullable TopicPartitionOffset @Nullable [] topicPartitions = containerProperties.getTopicPartitions();
+	@Nullable
+	private TopicPartitionOffset[] partitionSubset(ContainerProperties containerProperties, int index) {
+		TopicPartitionOffset[] topicPartitions = containerProperties.getTopicPartitions();
 		if (topicPartitions == null) {
 			return null;
 		}
-
 		if (this.concurrency == 1) {
 			return topicPartitions;
 		}
-
-		int numPartitions = topicPartitions.length;
-
-		if (numPartitions == this.concurrency) {
-			return new TopicPartitionOffset[] { topicPartitions[index] };
+		else {
+			int numPartitions = topicPartitions.length;
+			if (numPartitions == this.concurrency) {
+				return new TopicPartitionOffset[] { topicPartitions[index] };
+			}
+			else {
+				int perContainer = numPartitions / this.concurrency;
+				TopicPartitionOffset[] subset;
+				if (index == this.concurrency - 1) {
+					subset = Arrays.copyOfRange(topicPartitions, index * perContainer, topicPartitions.length);
+				}
+				else {
+					subset = Arrays.copyOfRange(topicPartitions, index * perContainer, (index + 1) * perContainer);
+				}
+				return subset;
+			}
 		}
-
-		int perContainer = numPartitions / this.concurrency;
-		int start = index * perContainer;
-		int end = (index == this.concurrency - 1)
-				? numPartitions
-				: start + perContainer;
-
-		return Arrays.copyOfRange(topicPartitions, start, end);
 	}
 
 	/*
@@ -432,8 +434,7 @@ public class ConcurrentMessageListenerContainer<K, V> extends AbstractMessageLis
 		}
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
-	private void publishConcurrentContainerStoppedEvent(@Nullable Reason reason) {
+	private void publishConcurrentContainerStoppedEvent(Reason reason) {
 		ApplicationEventPublisher eventPublisher = getApplicationEventPublisher();
 		if (eventPublisher != null) {
 			eventPublisher.publishEvent(new ConcurrentContainerStoppedEvent(this, reason));

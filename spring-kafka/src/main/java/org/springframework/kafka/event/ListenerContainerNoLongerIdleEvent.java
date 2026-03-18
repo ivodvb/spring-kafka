@@ -16,7 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,7 +23,6 @@ import java.util.List;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 /**
  * An event that is emitted when a container is no longer idle if configured to publish
@@ -35,16 +33,15 @@ import org.jspecify.annotations.Nullable;
  */
 public class ListenerContainerNoLongerIdleEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private final long idleTime;
 
 	private final String listenerId;
 
-	private transient final @Nullable List<TopicPartition> topicPartitions;
+	private transient List<TopicPartition> topicPartitions;
 
-	private transient final @Nullable Consumer<?, ?> consumer;
+	private transient Consumer<?, ?> consumer;
 
 	/**
 	 * Construct an instance with the provided arguments.
@@ -56,7 +53,7 @@ public class ListenerContainerNoLongerIdleEvent extends KafkaEvent {
 	 * @param consumer the consumer.
 	 */
 	public ListenerContainerNoLongerIdleEvent(Object source, Object container, long idleTime, String id,
-			@Nullable Collection<TopicPartition> topicPartitions, Consumer<?, ?> consumer) {
+			Collection<TopicPartition> topicPartitions, Consumer<?, ?> consumer) {
 
 		super(source, container);
 		this.idleTime = idleTime;
@@ -69,7 +66,7 @@ public class ListenerContainerNoLongerIdleEvent extends KafkaEvent {
 	 * The TopicPartitions the container is listening to.
 	 * @return the TopicPartition list.
 	 */
-	public @Nullable Collection<TopicPartition> getTopicPartitions() {
+	public Collection<TopicPartition> getTopicPartitions() {
 		return this.topicPartitions == null ? null : Collections.unmodifiableList(this.topicPartitions);
 	}
 
@@ -94,7 +91,7 @@ public class ListenerContainerNoLongerIdleEvent extends KafkaEvent {
 	 * Allows the listener to resume a paused consumer.
 	 * @return the consumer.
 	 */
-	public @Nullable Consumer<?, ?> getConsumer() {
+	public Consumer<?, ?> getConsumer() {
 		return this.consumer;
 	}
 

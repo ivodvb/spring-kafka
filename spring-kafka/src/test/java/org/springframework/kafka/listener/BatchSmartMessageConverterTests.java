@@ -121,7 +121,7 @@ class BatchSmartMessageConverterTests {
 		@Bean
 		public Map<String, Object> consumerConfigs(EmbeddedKafkaBroker embeddedKafka) {
 			Map<String, Object> consumerProps =
-					KafkaTestUtils.consumerProps(embeddedKafka, "smartBatchGroup", false);
+					KafkaTestUtils.consumerProps("smartBatchGroup", "false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 			consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class);
 			return consumerProps;

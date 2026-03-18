@@ -22,10 +22,10 @@ import java.util.List;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 
 /**
@@ -46,7 +46,7 @@ public interface BatchMessageConverter extends MessageConverter {
 	 */
 	@NonNull
 	Message<?> toMessage(List<ConsumerRecord<?, ?>> records, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer, Type payloadType);
+			Consumer<?, ?> consumer, Type payloadType);
 
 	/**
 	 * Convert a message to a producer record.

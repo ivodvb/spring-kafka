@@ -19,8 +19,6 @@ package org.springframework.kafka.listener.adapter;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.core.KotlinDetector;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
@@ -41,10 +39,9 @@ public class KafkaMessageHandlerMethodFactory extends DefaultMessageHandlerMetho
 	private final HandlerMethodArgumentResolverComposite argumentResolvers =
 			new HandlerMethodArgumentResolverComposite();
 
-	@SuppressWarnings("NullAway.Init")
 	private MessageConverter messageConverter;
 
-	private @Nullable Validator validator;
+	private Validator validator;
 
 	@Override
 	public void setMessageConverter(MessageConverter messageConverter) {

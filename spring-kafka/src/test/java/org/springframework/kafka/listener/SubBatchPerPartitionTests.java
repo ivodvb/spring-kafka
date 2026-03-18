@@ -134,7 +134,7 @@ public class SubBatchPerPartitionTests {
 
 	@Test
 	void defaults() {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(this.broker, "sbpp", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("sbpp", "false", this.broker);
 		ConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties("sbpp");
 		containerProps.setMessageListener(mock(MessageListener.class));
@@ -240,7 +240,7 @@ public class SubBatchPerPartitionTests {
 				}
 				switch (which.get().getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					default:
 						try {
 							Thread.sleep(100);
@@ -248,7 +248,7 @@ public class SubBatchPerPartitionTests {
 						catch (@SuppressWarnings("unused") InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
 			willAnswer(i -> {

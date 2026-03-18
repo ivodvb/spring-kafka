@@ -190,7 +190,7 @@ public class PauseContainerManualAssignmentTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					default:
 						try {
 							Thread.sleep(50);
@@ -198,7 +198,7 @@ public class PauseContainerManualAssignmentTests {
 						catch (InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(any());
 			List<TopicPartition> paused = new ArrayList<>();

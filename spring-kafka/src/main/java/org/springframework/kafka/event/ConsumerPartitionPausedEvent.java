@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 import org.apache.kafka.common.TopicPartition;
 
 /**
@@ -30,7 +28,6 @@ import org.apache.kafka.common.TopicPartition;
  */
 public class ConsumerPartitionPausedEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private final TopicPartition partition;
@@ -45,6 +42,16 @@ public class ConsumerPartitionPausedEvent extends KafkaEvent {
 	public ConsumerPartitionPausedEvent(Object source, Object container, TopicPartition partition) {
 		super(source, container);
 		this.partition = partition;
+	}
+
+	/**
+	 * Return the paused partition.
+	 * @return the partition.
+	 * @deprecated replaced by {@link #getPartition()}
+	 */
+	@Deprecated(since = "3.3", forRemoval = true)
+	public TopicPartition getPartitions() {
+		return this.partition;
 	}
 
 	/**

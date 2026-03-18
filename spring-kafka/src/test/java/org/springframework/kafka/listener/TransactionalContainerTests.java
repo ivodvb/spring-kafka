@@ -47,7 +47,6 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -66,7 +65,7 @@ import org.springframework.kafka.event.ListenerContainerIdleEvent;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.listener.ContainerProperties.AssignmentCommitOption;
 import org.springframework.kafka.listener.ContainerProperties.EOSMode;
-import org.springframework.kafka.support.JsonKafkaHeaderMapper;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
@@ -108,7 +107,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Wang Zhiyang
  * @author Soby Chacko
  * @author Raphael Rösch
- * @author Su Ko
  *
  * @since 1.3
  *
@@ -117,9 +115,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 		TransactionalContainerTests.topic3, TransactionalContainerTests.topic3DLT, TransactionalContainerTests.topic4,
 		TransactionalContainerTests.topic5, TransactionalContainerTests.topic6, TransactionalContainerTests.topic7,
 		TransactionalContainerTests.topic8, TransactionalContainerTests.topic8DLT, TransactionalContainerTests.topic9,
-		TransactionalContainerTests.topic10, TransactionalContainerTests.topic11, TransactionalContainerTests.topic12,
-		TransactionalContainerTests.topic13, TransactionalContainerTests.topic14, TransactionalContainerTests.topic15
-},
+		TransactionalContainerTests.topic10},
 		brokerProperties = { "transaction.state.log.replication.factor=1", "transaction.state.log.min.isr=1" })
 public class TransactionalContainerTests {
 
@@ -148,14 +144,6 @@ public class TransactionalContainerTests {
 	public static final String topic10 = "txTopic10";
 
 	public static final String topic11 = "txTopic11";
-
-	public static final String topic12 = "txTopic12";
-
-	public static final String topic13 = "txTopic13";
-
-	public static final String topic14 = "txTopic14";
-
-	public static final String topic15 = "txTopic15";
 
 	private static EmbeddedKafkaBroker embeddedKafka;
 
@@ -204,8 +192,8 @@ public class TransactionalContainerTests {
 			return null;
 		}).given(consumer).subscribe(any(Collection.class), any(ConsumerRebalanceListener.class));
 		ConsumerRecords records = new ConsumerRecords(Collections.singletonMap(topicPartition,
-				Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value"))), Map.of());
-		ConsumerRecords empty = new ConsumerRecords(Collections.emptyMap(), Map.of());
+				Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value"))));
+		ConsumerRecords empty = new ConsumerRecords(Collections.emptyMap());
 		final AtomicBoolean done = new AtomicBoolean();
 		willAnswer(i -> {
 			if (done.compareAndSet(false, true)) {
@@ -244,7 +232,7 @@ public class TransactionalContainerTests {
 		props.setAssignmentCommitOption(AssignmentCommitOption.ALWAYS);
 		props.setEosMode(eosMode);
 		props.setStopContainerWhenFenced(stopWhenFenced);
-		ConsumerGroupMetadata consumerGroupMetadata = mock(ConsumerGroupMetadata.class);
+		ConsumerGroupMetadata consumerGroupMetadata = new ConsumerGroupMetadata("group");
 		given(consumer.groupMetadata()).willReturn(consumerGroupMetadata);
 		final KafkaTemplate template = new KafkaTemplate(pf);
 		if (AckMode.MANUAL_IMMEDIATE.equals(ackMode)) {
@@ -317,7 +305,7 @@ public class TransactionalContainerTests {
 		Map<TopicPartition, List<ConsumerRecord<String, String>>> recordMap = new HashMap<>();
 		recordMap.put(topicPartition0, Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value")));
 		recordMap.put(topicPartition1, Collections.singletonList(new ConsumerRecord<>("foo", 1, 0, "key", "value")));
-		ConsumerRecords records = new ConsumerRecords(recordMap, Map.of());
+		ConsumerRecords records = new ConsumerRecords(recordMap);
 		final AtomicBoolean done = new AtomicBoolean();
 		willAnswer(i -> {
 			if (done.compareAndSet(false, true)) {
@@ -388,7 +376,7 @@ public class TransactionalContainerTests {
 		Map<TopicPartition, List<ConsumerRecord<String, String>>> recordMap = new HashMap<>();
 		recordMap.put(topicPartition0, Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value")));
 		recordMap.put(topicPartition1, Collections.singletonList(new ConsumerRecord<>("foo", 1, 0, "key", "value")));
-		ConsumerRecords records = new ConsumerRecords(recordMap, Map.of());
+		ConsumerRecords records = new ConsumerRecords(recordMap);
 		final AtomicBoolean done = new AtomicBoolean();
 		willAnswer(i -> {
 			if (done.compareAndSet(false, true)) {
@@ -453,7 +441,7 @@ public class TransactionalContainerTests {
 		Consumer consumer = mock(Consumer.class);
 		final TopicPartition topicPartition = new TopicPartition("foo", 0);
 		final ConsumerRecords records = new ConsumerRecords(Collections.singletonMap(topicPartition,
-				Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value"))), Map.of());
+				Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value"))));
 		final AtomicBoolean done = new AtomicBoolean();
 		willAnswer(i -> {
 			if (done.compareAndSet(false, true)) {
@@ -511,7 +499,7 @@ public class TransactionalContainerTests {
 	@SuppressWarnings({ "unchecked"})
 	@Test
 	public void testRollbackRecord() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txTest1", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("txTest1", "false", embeddedKafka);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, "group");
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
@@ -616,7 +604,7 @@ public class TransactionalContainerTests {
 
 	@SuppressWarnings({"unchecked"})
 	private void testFixLagGuts(String topic, int whichTm) throws InterruptedException {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txTest2", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("txTest2", "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic);
@@ -672,7 +660,7 @@ public class TransactionalContainerTests {
 	@Test
 	public void testMaxFailures() throws Exception {
 		String group = "groupInARBP";
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, group, false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps(group, "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic3);
@@ -741,7 +729,7 @@ public class TransactionalContainerTests {
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, topic3DLT);
 		ConsumerRecord<Integer, String> dltRecord = KafkaTestUtils.getSingleRecord(consumer, topic3DLT);
 		assertThat(dltRecord.value()).isEqualTo("foo");
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Map<String, Object> map = new HashMap<>();
 		mapper.toHeaders(dltRecord.headers(), map);
 		MessageHeaders headers = new MessageHeaders(map);
@@ -780,7 +768,7 @@ public class TransactionalContainerTests {
 	@Test
 	public void testBatchListenerMaxFailuresOnRecover() throws Exception {
 		String group = "groupInARBP2";
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, group, false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps(group, "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic8);
@@ -855,7 +843,7 @@ public class TransactionalContainerTests {
 		assertThat(dltRecord0.value()).isEqualTo("foo");
 		ConsumerRecord<Integer, String> dltRecord1 = recordList.get(1);
 		assertThat(dltRecord1.value()).isEqualTo("bar");
-		JsonKafkaHeaderMapper mapper = new JsonKafkaHeaderMapper();
+		DefaultKafkaHeaderMapper mapper = new DefaultKafkaHeaderMapper();
 		Map<String, Object> map = new HashMap<>();
 		mapper.toHeaders(dltRecord1.headers(), map);
 		MessageHeaders headers = new MessageHeaders(map);
@@ -897,7 +885,7 @@ public class TransactionalContainerTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testRollbackProcessorCrash() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testRollbackNoRetries", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testRollbackNoRetries", "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic4);
@@ -958,7 +946,7 @@ public class TransactionalContainerTests {
 	@Test
 	public void testBatchListenerRecoverAfterRollbackProcessorCrash() throws Exception {
 		String group = "testBatchListenerRollbackNoRetries";
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, group, false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps(group, "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 2);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
@@ -1043,7 +1031,7 @@ public class TransactionalContainerTests {
 		Map<TopicPartition, List<ConsumerRecord<String, String>>> recordMap = new HashMap<>();
 		recordMap.put(topicPartition0, Collections.singletonList(new ConsumerRecord<>("foo", 0, 0, "key", "value")));
 		recordMap.put(topicPartition1, Collections.singletonList(new ConsumerRecord<>("foo", 1, 0, "key", "value")));
-		ConsumerRecords records = new ConsumerRecords(recordMap, Map.of());
+		ConsumerRecords records = new ConsumerRecords(recordMap);
 		final AtomicBoolean done = new AtomicBoolean();
 		final CountDownLatch pollLatch = new CountDownLatch(2);
 		willAnswer(i -> {
@@ -1112,7 +1100,7 @@ public class TransactionalContainerTests {
 		final KafkaTemplate<Object, Object> template = new KafkaTemplate<>(pf);
 		// init consumer
 		String group = "groupInARBP3";
-		Map<String, Object> consumerProperties = KafkaTestUtils.consumerProps(embeddedKafka, group, false);
+		Map<String, Object> consumerProperties = KafkaTestUtils.consumerProps(group, "false", embeddedKafka);
 		consumerProperties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProperties);
 		ContainerProperties containerProps = new ContainerProperties(topic10);
@@ -1175,7 +1163,7 @@ public class TransactionalContainerTests {
 
 		// init consumer
 		String group = "testSendOffsetOnlyOnActiveTransaction";
-		Map<String, Object> consumerProperties = KafkaTestUtils.consumerProps(embeddedKafka, group, false);
+		Map<String, Object> consumerProperties = KafkaTestUtils.consumerProps(group, "false", embeddedKafka);
 		consumerProperties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProperties);
 		ContainerProperties containerProps = new ContainerProperties(topic11);
@@ -1192,7 +1180,7 @@ public class TransactionalContainerTests {
 		AtomicInteger txCount = new AtomicInteger(0);
 		tm.addListener(new TransactionExecutionListener() {
 			@Override
-			public void afterCommit(TransactionExecution transaction, @Nullable Throwable commitFailure) {
+			public void afterCommit(TransactionExecution transaction, Throwable commitFailure) {
 				txCount.incrementAndGet();
 				TransactionExecutionListener.super.afterCommit(transaction, commitFailure);
 			}
@@ -1206,7 +1194,7 @@ public class TransactionalContainerTests {
 			boolean isFirst = true;
 
 			@Override
-			public @Nullable ConsumerRecord<Integer, String> intercept(
+			public ConsumerRecord<Integer, String> intercept(
 					ConsumerRecord<Integer, String> record,
 					Consumer<Integer, String> consumer) {
 				if (isFirst) {
@@ -1242,216 +1230,5 @@ public class TransactionalContainerTests {
 
 		container.stop();
 		pf.destroy();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	void testFixTxOffsetsWithReadUncommitted() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txReadUncommittedTest", false);
-		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_uncommitted");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
-		ContainerProperties containerProps = new ContainerProperties(topic12);
-		containerProps.setGroupId("txReadUncommittedTest");
-		containerProps.setPollTimeout(500L);
-		containerProps.setIdleEventInterval(500L);
-		containerProps.setFixTxOffsets(true);
-
-		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
-		pf.setTransactionIdPrefix("readUncommitted.");
-
-		final KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf);
-		final AtomicInteger messageCount = new AtomicInteger();
-		final CountDownLatch latch = new CountDownLatch(1);
-		containerProps.setMessageListener((MessageListener<Integer, String>) message -> {
-			messageCount.incrementAndGet();
-			latch.countDown();
-		});
-
-		@SuppressWarnings({ "rawtypes" })
-		KafkaTransactionManager tm = new KafkaTransactionManager(pf);
-		containerProps.setKafkaAwareTransactionManager(tm);
-		KafkaMessageListenerContainer<Integer, String> container =
-				new KafkaMessageListenerContainer<>(cf, containerProps);
-		container.setBeanName("testFixTxOffsetsWithReadUncommitted");
-
-		AtomicReference<Map<TopicPartition, OffsetAndMetadata>> committed = new AtomicReference<>();
-		CountDownLatch idleLatch = new CountDownLatch(1);
-		container.setApplicationEventPublisher(event -> {
-			if (event instanceof ListenerContainerIdleEvent) {
-				Consumer<?, ?> consumer = ((ListenerContainerIdleEvent) event).getConsumer();
-				committed.set(consumer.committed(
-						Collections.singleton(new TopicPartition(topic12, 0))));
-				idleLatch.countDown();
-			}
-		});
-
-		container.start();
-
-		template.setDefaultTopic(topic12);
-		template.executeInTransaction(t -> {
-			template.sendDefault(0, 0, "msg1");
-			template.sendDefault(0, 0, "msg2");
-			template.sendDefault(0, 0, "msg3");
-			return null;
-		});
-
-		assertThat(latch.await(60, TimeUnit.SECONDS)).isTrue();
-		assertThat(idleLatch.await(60, TimeUnit.SECONDS)).isTrue();
-
-		assertThat(messageCount.get()).isGreaterThanOrEqualTo(3);
-		TopicPartition partition0 = new TopicPartition(topic12, 0);
-		assertThat(committed.get().get(partition0)).isNotNull();
-
-		// 0 1 2 3(tx marker) => next offset 4
-		assertThat(committed.get().get(partition0).offset()).isGreaterThanOrEqualTo(4L);
-
-		container.stop();
-		pf.destroy();
-	}
-
-	@Test
-	void testFixTxOffsetsWithEmptyPollAdvance() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txEmptyPoll", false);
-		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
-
-		ContainerProperties containerProps = new ContainerProperties(topic13);
-		containerProps.setGroupId("txEmptyPoll");
-		containerProps.setPollTimeout(500L);
-		containerProps.setFixTxOffsets(true);
-		containerProps.setIdleEventInterval(1000L);
-
-		containerProps.setMessageListener((MessageListener<Integer, String>) rec -> {
-		});
-
-		DefaultKafkaProducerFactory<Integer, String> pf =
-				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(embeddedKafka));
-		pf.setTransactionIdPrefix("tx.emptyPoll.");
-		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf);
-
-		KafkaMessageListenerContainer<Integer, String> container =
-				new KafkaMessageListenerContainer<>(cf, containerProps);
-		container.setBeanName("testFixEmptyPoll");
-
-		AtomicReference<Map<TopicPartition, OffsetAndMetadata>> committed = new AtomicReference<>();
-		CountDownLatch latch = new CountDownLatch(1);
-
-		container.setApplicationEventPublisher(event -> {
-			if (event instanceof ListenerContainerIdleEvent e) {
-				TopicPartition tp = new TopicPartition(topic13, 0);
-				committed.set(e.getConsumer().committed(Set.of(tp)));
-				latch.countDown();
-			}
-		});
-
-		container.start();
-
-		template.setDefaultTopic(topic13);
-		template.executeInTransaction(t -> {
-			template.sendDefault(0, 0, "msg1");
-			template.sendDefault(0, 0, "msg2");
-			template.sendDefault(0, 0, "msg3");
-			return null;
-		});
-
-		assertThat(latch.await(60, TimeUnit.SECONDS)).isTrue();
-		assertThat(committed.get().get(new TopicPartition(topic13, 0)).offset())
-				.isEqualTo(4L);
-		container.stop();
-	}
-
-	@Test
-	void testFixTxOffsetsRetainsLeaderEpoch() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txLeaderEpoch", false);
-		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
-
-		ContainerProperties containerProps = new ContainerProperties(topic14);
-		containerProps.setFixTxOffsets(true);
-		containerProps.setIdleEventInterval(1000L);
-
-		containerProps.setMessageListener((MessageListener<Integer, String>) rec -> {
-		});
-
-		DefaultKafkaProducerFactory<Integer, String> pf =
-				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(embeddedKafka));
-		pf.setTransactionIdPrefix("tx.leaderEpoch.");
-		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf);
-
-		KafkaMessageListenerContainer<Integer, String> container =
-				new KafkaMessageListenerContainer<>(cf, containerProps);
-
-		AtomicReference<OffsetAndMetadata> committed = new AtomicReference<>();
-		CountDownLatch latch = new CountDownLatch(1);
-
-		container.setApplicationEventPublisher(event -> {
-			if (event instanceof ListenerContainerIdleEvent e) {
-				TopicPartition tp = new TopicPartition(topic14, 0);
-				committed.set(e.getConsumer().committed(Set.of(tp)).get(tp));
-				latch.countDown();
-			}
-		});
-
-		container.start();
-
-		template.setDefaultTopic(topic14);
-		template.executeInTransaction(t -> {
-			template.sendDefault(0, 0, "data");
-			return null;
-		});
-
-		assertThat(latch.await(30, TimeUnit.SECONDS)).isTrue();
-		assertThat(committed.get().leaderEpoch().isPresent()).isTrue();
-		container.stop();
-	}
-
-	@Test
-	void testFixLagWhenMaxPollEqualsTxBatchSize() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "txTestPollLimit", false);
-		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 3);
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
-
-		ContainerProperties containerProps = new ContainerProperties(topic15);
-		containerProps.setGroupId("txTestPollLimit");
-		containerProps.setPollTimeout(500L);
-		containerProps.setFixTxOffsets(true);
-		containerProps.setIdleEventInterval(1000L);
-		containerProps.setMessageListener((MessageListener<Integer, String>) rec -> {
-		});
-
-		DefaultKafkaProducerFactory<Integer, String> pf =
-				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(embeddedKafka));
-		pf.setTransactionIdPrefix("tx.polllimit.");
-
-		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf);
-		KafkaMessageListenerContainer<Integer, String> container = new KafkaMessageListenerContainer<>(cf, containerProps);
-		container.setBeanName("testFixLagPollLimit");
-
-		AtomicReference<Map<TopicPartition, OffsetAndMetadata>> committed = new AtomicReference<>();
-		CountDownLatch latch = new CountDownLatch(1);
-
-		container.setApplicationEventPublisher(event -> {
-			if (event instanceof ListenerContainerIdleEvent e) {
-				committed.set(e.getConsumer().committed(Set.of(new TopicPartition(topic15, 0))));
-				latch.countDown();
-			}
-		});
-
-		container.start();
-
-		template.setDefaultTopic(topic15);
-		template.executeInTransaction(t -> {
-			template.sendDefault(0, 0, "msg1");
-			template.sendDefault(0, 0, "msg2");
-			template.sendDefault(0, 0, "msg3");
-			return null;
-		});
-
-		assertThat(latch.await(60, TimeUnit.SECONDS)).isTrue();
-		assertThat(committed.get().get(new TopicPartition(topic15, 0)).offset()).isEqualTo(4L);
-		container.stop();
 	}
 }

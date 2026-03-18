@@ -45,11 +45,11 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -59,7 +59,6 @@ import org.springframework.util.Assert;
  * @author Hugo Wood
  * @author Artem Bilan
  * @author Sanghyeok An
- * @author Mikhail Polivakha
  */
 public final class KafkaTestUtils {
 
@@ -67,11 +66,7 @@ public final class KafkaTestUtils {
 
 	private static final LogAccessor logger = new LogAccessor(LogFactory.getLog(KafkaTestUtils.class)); // NOSONAR
 
-	private static final Properties defaults = new Properties();
-
-	static {
-		defaults.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-	}
+	private static Properties defaults;
 
 	private KafkaTestUtils() {
 	}
@@ -82,26 +77,9 @@ public final class KafkaTestUtils {
 	 * @param autoCommit the auto commit.
 	 * @param embeddedKafka a {@link EmbeddedKafkaBroker} instance.
 	 * @return the properties.
-	 * @deprecated please, use {@link #consumerProps(EmbeddedKafkaBroker, String, boolean)} instead
 	 */
-	@Deprecated(forRemoval = true, since = "4.0.0")
 	public static Map<String, Object> consumerProps(String group, String autoCommit,
 			EmbeddedKafkaBroker embeddedKafka) {
-
-		return consumerProps(embeddedKafka.getBrokersAsString(), group, autoCommit);
-	}
-
-	/**
-	 * Set up test properties for an {@code <Integer, String>} consumer.
-	 *
-	 * @param group the group id.
-	 * @param autoCommit the auto commit.
-	 * @param embeddedKafka a {@link EmbeddedKafkaBroker} instance.
-	 * @return the properties.
-	 * @since 4.0
-	 */
-	public static Map<String, Object> consumerProps(EmbeddedKafkaBroker embeddedKafka, String group,
-			boolean autoCommit) {
 
 		return consumerProps(embeddedKafka.getBrokersAsString(), group, autoCommit);
 	}
@@ -114,7 +92,7 @@ public final class KafkaTestUtils {
 	 * @since 3.3
 	 */
 	public static Map<String, Object> consumerProps(String brokers, String group) {
-		return consumerProps(brokers, group, false);
+		return consumerProps(brokers, group, "false");
 	}
 
 	/**
@@ -132,22 +110,8 @@ public final class KafkaTestUtils {
 	 * @param group the group id.
 	 * @param autoCommit the auto commit.
 	 * @return the properties.
-	 * @deprecated Please, use {@link #consumerProps(String, String, boolean)} instead.
- 	 */
-	@Deprecated(forRemoval = true, since = "4.0.0")
-	public static Map<String, Object> consumerProps(String brokers, String group, String autoCommit) {
-		return consumerProps(brokers, group, Boolean.parseBoolean(autoCommit));
-	}
-
-	/**
-	 * Set up test properties for an {@code <Integer, String>} consumer.
-	 * @param brokers the bootstrapServers property.
-	 * @param group the group id.
-	 * @param autoCommit the auto commit.
-	 * @return the properties.
-	 * @since 4.0
 	 */
-	public static Map<String, Object> consumerProps(String brokers, String group, boolean autoCommit) {
+	public static Map<String, Object> consumerProps(String brokers, String group, String autoCommit) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, group);
@@ -230,7 +194,7 @@ public final class KafkaTestUtils {
 					reset.computeIfAbsent(new TopicPartition(rec.topic(), rec.partition()), tp -> rec.offset());
 				}
 			});
-			reset.forEach(consumer::seek);
+			reset.forEach((tp, off) -> consumer.seek(tp, off));
 			try {
 				Thread.sleep(50); // NOSONAR magic#
 			}
@@ -267,7 +231,7 @@ public final class KafkaTestUtils {
 	public static ConsumerRecord<?, ?> getOneRecord(String brokerAddresses, String group, String topic, int partition,
 			boolean seekToLast, boolean commit, Duration timeout) {
 
-		Map<String, Object> consumerConfig = consumerProps(brokerAddresses, group, false);
+		Map<String, Object> consumerConfig = consumerProps(brokerAddresses, group, "false");
 		consumerConfig.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
 		try (KafkaConsumer consumer = new KafkaConsumer(consumerConfig)) {
 			TopicPartition topicPart = new TopicPartition(topic, partition);
@@ -297,7 +261,7 @@ public final class KafkaTestUtils {
 	 * @throws Exception if an exception occurs.
 	 * @since 2.3
 	 */
-	public static @Nullable OffsetAndMetadata getCurrentOffset(String brokerAddresses, String group, String topic, int partition)
+	public static OffsetAndMetadata getCurrentOffset(String brokerAddresses, String group, String topic, int partition)
 			throws Exception { // NOSONAR
 
 		try (AdminClient client = AdminClient
@@ -317,7 +281,7 @@ public final class KafkaTestUtils {
 	 * @throws Exception if an exception occurs.
 	 * @since 3.0
 	 */
-	public static @Nullable OffsetAndMetadata getCurrentOffset(AdminClient adminClient, String group, String topic, int partition)
+	public static OffsetAndMetadata getCurrentOffset(AdminClient adminClient, String group, String topic, int partition)
 			throws Exception { // NOSONAR
 
 		return adminClient.listConsumerGroupOffsets(group).partitionsToOffsetAndMetadata().get() // NOSONAR false positive
@@ -334,7 +298,7 @@ public final class KafkaTestUtils {
 	 * @see Consumer#endOffsets(Collection, Duration)
 	 */
 	public static Map<TopicPartition, Long> getEndOffsets(Consumer<?, ?> consumer, String topic,
-			Integer @Nullable ... partitions) {
+			Integer... partitions) {
 
 		Collection<TopicPartition> tps;
 		if (partitions == null || partitions.length == 0) {
@@ -421,7 +385,7 @@ public final class KafkaTestUtils {
 			}
 		}
 		while (count < minRecords && remaining > 0);
-		return new ConsumerRecords<>(records, Map.of());
+		return new ConsumerRecords<>(records);
 	}
 
 	/**
@@ -431,7 +395,7 @@ public final class KafkaTestUtils {
 	 * @param propertyPath The path.
 	 * @return The field.
 	 */
-	public static @Nullable Object getPropertyValue(Object root, String propertyPath) {
+	public static Object getPropertyValue(Object root, String propertyPath) {
 		Object value = null;
 		DirectFieldAccessor accessor = new DirectFieldAccessor(root);
 		String[] tokens = propertyPath.split("\\.");
@@ -460,7 +424,7 @@ public final class KafkaTestUtils {
 	 * @see #getPropertyValue(Object, String)
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> @Nullable T getPropertyValue(Object root, String propertyPath, Class<T> type) {
+	public static <T> T getPropertyValue(Object root, String propertyPath, Class<T> type) {
 		Object value = getPropertyValue(root, propertyPath);
 		if (value != null) {
 			Assert.isAssignable(type, value.getClass());
@@ -475,6 +439,11 @@ public final class KafkaTestUtils {
 	 * @since 2.2.5
 	 */
 	public static Properties defaultPropertyOverrides() {
+		if (defaults == null) {
+			Properties props = new Properties();
+			props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+			defaults = props;
+		}
 		return defaults;
 	}
 }

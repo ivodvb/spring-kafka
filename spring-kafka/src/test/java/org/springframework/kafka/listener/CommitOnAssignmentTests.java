@@ -55,6 +55,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -185,7 +186,7 @@ public class CommitOnAssignmentTests {
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				}
-				return new ConsumerRecords(records1, Map.of());
+				return new ConsumerRecords(records1);
 			}).given(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
 			willAnswer(i -> {
 				this.commitLatch.countDown();
@@ -195,7 +196,7 @@ public class CommitOnAssignmentTests {
 				this.closeLatch.countDown();
 				return null;
 			}).given(consumer).close();
-			given(consumer.groupMetadata()).willReturn(mock(ConsumerGroupMetadata.class));
+			willReturn(new ConsumerGroupMetadata("")).given(consumer).groupMetadata();
 			return consumer;
 		}
 

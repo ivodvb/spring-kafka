@@ -53,11 +53,11 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
-import org.springframework.kafka.support.converter.BytesJacksonJsonMessageConverter;
+import org.springframework.kafka.support.converter.BytesJsonMessageConverter;
 import org.springframework.kafka.support.converter.ConversionException;
 import org.springframework.kafka.support.serializer.DelegatingByTypeSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
@@ -84,7 +84,7 @@ import static org.mockito.Mockito.verify;
  */
 @SpringJUnitConfig
 @DirtiesContext
-@EmbeddedKafka(partitions = 1, topics = { "blc1", "blc2", "blc3", "blc4", "blc5", "blc6", "blc6-dlt" })
+@EmbeddedKafka(kraft = false, partitions = 1, topics = { "blc1", "blc2", "blc3", "blc4", "blc5", "blc6", "blc6-dlt" })
 public class BatchListenerConversionTests {
 
 	private static final String DEFAULT_TEST_GROUP_ID = "blc";
@@ -106,7 +106,7 @@ public class BatchListenerConversionTests {
 
 	@Test
 	public void testBatchOfPojos(@Autowired KafkaListenerEndpointRegistry registry) throws Exception {
-		assertThat(this.embeddedKafka).isInstanceOf(EmbeddedKafkaKraftBroker.class);
+		assertThat(this.embeddedKafka).isInstanceOf(EmbeddedKafkaZKBroker.class);
 		assertThat(registry.getListenerContainerIds()).contains("blc1.id", "blc2.id");
 		doTest(this.listener1, "blc1");
 		doTest(this.listener2, "blc2");
@@ -199,7 +199,7 @@ public class BatchListenerConversionTests {
 		@Bean
 		public Map<String, Object> consumerConfigs(EmbeddedKafkaBroker embeddedKafka) {
 			Map<String, Object> consumerProps =
-					KafkaTestUtils.consumerProps(embeddedKafka, DEFAULT_TEST_GROUP_ID, false);
+					KafkaTestUtils.consumerProps(DEFAULT_TEST_GROUP_ID, "false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class);
 			consumerProps.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, 1000);
 			consumerProps.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 500);
@@ -214,8 +214,8 @@ public class BatchListenerConversionTests {
 		}
 
 		@Bean
-		public BytesJacksonJsonMessageConverter converter() {
-			return new BytesJacksonJsonMessageConverter();
+		public BytesJsonMessageConverter converter() {
+			return new BytesJsonMessageConverter();
 		}
 
 		@Bean

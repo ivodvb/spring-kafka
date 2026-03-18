@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.requestreply;
 
-import java.io.Serial;
-
 import org.springframework.kafka.KafkaException;
 
 /**
@@ -29,7 +27,6 @@ import org.springframework.kafka.KafkaException;
  */
 public class KafkaReplyTimeoutException extends KafkaException {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	public KafkaReplyTimeoutException(String message) {

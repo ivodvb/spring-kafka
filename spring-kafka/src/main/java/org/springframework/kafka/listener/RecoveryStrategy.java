@@ -18,7 +18,8 @@ package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Called to determine whether a record should be skipped.
@@ -39,7 +40,7 @@ public interface RecoveryStrategy {
 	 * @return true to skip.
 	 * @throws InterruptedException if the thread is interrupted.
 	 */
-	boolean recovered(ConsumerRecord<?, ?> record, @Nullable Exception ex, @Nullable MessageListenerContainer container,
+	boolean recovered(ConsumerRecord<?, ?> record, Exception ex, @Nullable MessageListenerContainer container,
 			@Nullable Consumer<?, ?> consumer) throws InterruptedException;
 
 }

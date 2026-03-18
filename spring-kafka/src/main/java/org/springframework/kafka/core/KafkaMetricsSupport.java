@@ -36,8 +36,8 @@ import io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.Assert;
@@ -168,7 +168,7 @@ public abstract class KafkaMetricsSupport<C> {
 	 * @param id the unique identifier for the client to manage in store.
 	 * @param client the Kafka client instance to unbind.
 	 */
-	protected final void unbindClient(@Nullable String id, C client) {
+	protected final void unbindClient(String id, C client) {
 		AutoCloseable removed = (AutoCloseable) this.metrics.remove(id);
 		if (removed != null) {
 			try {

@@ -18,7 +18,7 @@ package org.springframework.kafka.listener.adapter;
 
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import org.springframework.lang.Nullable;
 
 /**
  * A strategy for configuring which headers, if any, should be set in a reply message.

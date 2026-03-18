@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.listener.BatchAcknowledgingConsumerAwareMessageListener;
 import org.springframework.kafka.listener.KafkaListenerErrorHandler;
@@ -31,6 +30,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.converter.BatchMessageConverter;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
@@ -64,14 +64,14 @@ public class BatchMessagingMessageListenerAdapter<K, V> extends MessagingMessage
 
 	private BatchMessageConverter batchMessageConverter = new BatchMessagingMessageConverter();
 
-	private @Nullable BatchToRecordAdapter<K, V> batchToRecordAdapter;
+	private BatchToRecordAdapter<K, V> batchToRecordAdapter;
 
 	/**
 	 * Create an instance with the provided parameters.
 	 * @param bean the listener bean.
 	 * @param method the listener method.
 	 */
-	public BatchMessagingMessageListenerAdapter(@Nullable Object bean, @Nullable Method method) {
+	public BatchMessagingMessageListenerAdapter(Object bean, Method method) {
 		this(bean, method, null);
 	}
 
@@ -81,7 +81,7 @@ public class BatchMessagingMessageListenerAdapter<K, V> extends MessagingMessage
 	 * @param method the listener method.
 	 * @param errorHandler the error handler.
 	 */
-	public BatchMessagingMessageListenerAdapter(@Nullable Object bean, @Nullable Method method,
+	public BatchMessagingMessageListenerAdapter(Object bean, Method method,
 			@Nullable KafkaListenerErrorHandler errorHandler) {
 
 		super(bean, method, errorHandler);
@@ -165,7 +165,7 @@ public class BatchMessagingMessageListenerAdapter<K, V> extends MessagingMessage
 	 */
 	@Override
 	public void onMessage(List<ConsumerRecord<K, V>> records, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer) {
+			Consumer<?, ?> consumer) {
 
 		Message<?> message;
 		if (!isConsumerRecordList()) {
@@ -196,7 +196,7 @@ public class BatchMessagingMessageListenerAdapter<K, V> extends MessagingMessage
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	protected Message<?> toMessagingMessage(List records, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer) {
+			Consumer<?, ?> consumer) {
 
 		return getBatchMessageConverter().toMessage(records, acknowledgment, consumer, getType());
 	}

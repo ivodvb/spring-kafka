@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.kafka.clients.CommonClientConfigs;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Base class for consumer/producer/admin creators.
@@ -31,7 +32,7 @@ import org.jspecify.annotations.Nullable;
  */
 public abstract class KafkaResourceFactory {
 
-	private @Nullable Supplier<String> bootstrapServersSupplier;
+	private Supplier<String> bootstrapServersSupplier;
 
 	@Nullable
 	protected String getBootstrapServers() {

@@ -26,9 +26,9 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -187,7 +187,6 @@ public class DelegatingSerializer implements Serializer<Object> {
 		throw new UnsupportedOperationException();
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	@Override
 	public byte[] serialize(String topic, Headers headers, Object data) {
 		if (data == null) {
@@ -230,7 +229,7 @@ public class DelegatingSerializer implements Serializer<Object> {
 	/*
 	 * Package for testing.
 	 */
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
+	@Nullable
 	byte[] trySerdes(Object data) {
 		try {
 			Serde<? extends Object> serdeFrom = Serdes.serdeFrom(data.getClass());
