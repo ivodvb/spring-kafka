@@ -23,7 +23,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.PartitionInfo;
@@ -56,8 +55,6 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * @author Gary Russell
- * @author Artem Bilan
- *
  * @since 2.7.7
  *
  */
@@ -92,7 +89,7 @@ class RetryTopicConfigurationManualAssignmentIntegrationTests {
 			assertThat(config.latch.await(120, TimeUnit.SECONDS)).isTrue();
 		}
 		finally {
-			consumer.close(CloseOptions.timeout(Duration.ofSeconds(10)));
+			consumer.close(Duration.ofSeconds(10));
 		}
 	}
 
@@ -127,7 +124,7 @@ class RetryTopicConfigurationManualAssignmentIntegrationTests {
 
 		@Bean
 		ConsumerFactory<Integer, String> consumerFactory(EmbeddedKafkaBroker embeddedKafka) {
-			Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "retryConfig", false);
+			Map<String, Object> props = KafkaTestUtils.consumerProps("retryConfig", "false", embeddedKafka);
 			props.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
 			return new DefaultKafkaConsumerFactory<>(
 					props);

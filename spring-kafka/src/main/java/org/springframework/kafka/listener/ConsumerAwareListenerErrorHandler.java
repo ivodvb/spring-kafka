@@ -17,7 +17,6 @@
 package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.messaging.Message;
 
@@ -39,6 +38,6 @@ public interface ConsumerAwareListenerErrorHandler extends KafkaListenerErrorHan
 	}
 
 	@Override
-	Object handleError(Message<?> message, ListenerExecutionFailedException exception, @Nullable Consumer<?, ?> consumer);
+	Object handleError(Message<?> message, ListenerExecutionFailedException exception, Consumer<?, ?> consumer);
 
 }

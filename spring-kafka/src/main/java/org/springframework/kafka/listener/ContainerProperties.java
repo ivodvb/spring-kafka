@@ -29,16 +29,15 @@ import java.util.regex.Pattern;
 import io.micrometer.observation.ObservationRegistry;
 import org.aopalliance.aop.Advice;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.kafka.support.ShareAcknowledgment;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.micrometer.KafkaListenerObservationConvention;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -241,12 +240,12 @@ public class ContainerProperties extends ConsumerProperties {
 	 * The message listener; must be a {@link org.springframework.kafka.listener.MessageListener}
 	 * or {@link org.springframework.kafka.listener.AcknowledgingMessageListener}.
 	 */
-	private @Nullable Object messageListener;
+	private Object messageListener;
 
 	/**
 	 * The executor for threads that poll the consumer.
 	 */
-	private @Nullable AsyncTaskExecutor listenerTaskExecutor;
+	private AsyncTaskExecutor listenerTaskExecutor;
 
 	/**
 	 * The timeout for shutting down the container. This is the maximum amount of
@@ -255,22 +254,22 @@ public class ContainerProperties extends ConsumerProperties {
 	 */
 	private long shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
 
-	private @Nullable Long idleEventInterval;
+	private Long idleEventInterval;
 
-	private @Nullable Long idlePartitionEventInterval;
+	private Long idlePartitionEventInterval;
 
 	private double idleBeforeDataMultiplier = DEFAULT_IDLE_BEFORE_DATA_MULTIPLIER;
 
 	@Deprecated(since = "3.2")
-	private @Nullable PlatformTransactionManager transactionManager;
+	private PlatformTransactionManager transactionManager;
 
-	private @Nullable KafkaAwareTransactionManager<?, ?> kafkaAwareTransactionManager;
+	private KafkaAwareTransactionManager<?, ?> kafkaAwareTransactionManager;
 
 	private boolean batchRecoverAfterRollback = false;
 
 	private int monitorInterval = DEFAULT_MONITOR_INTERVAL;
 
-	private @Nullable TaskScheduler scheduler;
+	private TaskScheduler scheduler;
 
 	private float noPollThreshold = DEFAULT_NO_POLL_THRESHOLD;
 
@@ -288,7 +287,7 @@ public class ContainerProperties extends ConsumerProperties {
 
 	private Duration consumerStartTimeout = DEFAULT_CONSUMER_START_TIMEOUT;
 
-	private @Nullable Boolean subBatchPerPartition;
+	private Boolean subBatchPerPartition;
 
 	private AssignmentCommitOption assignmentCommitOption = AssignmentCommitOption.LATEST_ONLY_NO_TX;
 
@@ -296,7 +295,7 @@ public class ContainerProperties extends ConsumerProperties {
 
 	private EOSMode eosMode = EOSMode.V2;
 
-	private @Nullable TransactionDefinition transactionDefinition;
+	private TransactionDefinition transactionDefinition;
 
 	private boolean stopContainerWhenFenced;
 
@@ -306,17 +305,11 @@ public class ContainerProperties extends ConsumerProperties {
 
 	private boolean pauseImmediate;
 
-	private @Nullable KafkaListenerObservationConvention observationConvention;
+	private KafkaListenerObservationConvention observationConvention;
 
 	private Duration pollTimeoutWhilePaused = DEFAULT_PAUSED_POLL_TIMEOUT;
 
 	private boolean restartAfterAuthExceptions;
-
-	private boolean recordObservationsInBatch;
-
-	private boolean explicitShareAcknowledgment = false;
-
-	private Duration shareAcknowledgmentTimeout = Duration.ofSeconds(30); // Align with Kafka's share.record.lock.duration.ms default
 
 	/**
 	 * Create properties for a container that will subscribe to the specified topics.
@@ -335,7 +328,7 @@ public class ContainerProperties extends ConsumerProperties {
 	 * @param topicPattern the pattern.
 	 * @see org.apache.kafka.clients.CommonClientConfigs#METADATA_MAX_AGE_CONFIG
 	 */
-	public ContainerProperties(@Nullable Pattern topicPattern) {
+	public ContainerProperties(Pattern topicPattern) {
 		super(topicPattern);
 	}
 
@@ -494,7 +487,7 @@ public class ContainerProperties extends ConsumerProperties {
 		return this.ackTime;
 	}
 
-	public @Nullable Object getMessageListener() {
+	public Object getMessageListener() {
 		return this.messageListener;
 	}
 
@@ -798,7 +791,7 @@ public class ContainerProperties extends ConsumerProperties {
 	 * @param consumerStartTimeout the consumer start timeout.
 	 */
 	public void setConsumerStartTimeout(Duration consumerStartTimeout) {
-		Assert.notNull(consumerStartTimeout, "'consumerStartTimeout' cannot be null");
+		Assert.notNull(consumerStartTimeout, "'consumerStartTimout' cannot be null");
 		this.consumerStartTimeout = consumerStartTimeout;
 	}
 
@@ -1036,16 +1029,14 @@ public class ContainerProperties extends ConsumerProperties {
 				this.adviceChain.forEach(advised::addAdvice);
 			}
 			else {
-				if (this.messageListener != null) {
-					ProxyFactory pf = new ProxyFactory(this.messageListener);
-					this.adviceChain.forEach(pf::addAdvice);
-					this.messageListener = pf.getProxy();
-				}
+				ProxyFactory pf = new ProxyFactory(this.messageListener);
+				this.adviceChain.forEach(pf::addAdvice);
+				this.messageListener = pf.getProxy();
 			}
 		}
 	}
 
-	public @Nullable KafkaListenerObservationConvention getObservationConvention() {
+	public KafkaListenerObservationConvention getObservationConvention() {
 		return this.observationConvention;
 	}
 
@@ -1097,78 +1088,6 @@ public class ContainerProperties extends ConsumerProperties {
 	 */
 	public void setRestartAfterAuthExceptions(boolean restartAfterAuthExceptions) {
 		this.restartAfterAuthExceptions = restartAfterAuthExceptions;
-	}
-
-	/**
-	 * When true, and a batch listener is configured with observation enabled, an observation
-	 * will be started for each record in the batch.
-	 * @return recordObservationsInBatch.
-	 * @since 4.0
-	 */
-	public boolean isRecordObservationsInBatch() {
-		return this.recordObservationsInBatch;
-	}
-
-	/**
-	 * Set whether to enable individual record observations in a batch.
-	 * When true, and a batch listener is configured with observation enabled, an observation
-	 * will be started for each record in the batch. Default false.
-	 * @param recordObservationsInBatch true to enable individual record observations.
-	 * @since 4.0
-	 */
-	public void setRecordObservationsInBatch(boolean recordObservationsInBatch) {
-		this.recordObservationsInBatch = recordObservationsInBatch;
-	}
-
-	/**
-	 * Set whether explicit acknowledgment is required for share consumer containers.
-	 * <p>
-	 * This setting only applies to share consumer containers and is ignored
-	 * by regular consumer containers.
-	 * <p>
-	 * When set to {@code false} (default), records are automatically acknowledged
-	 * as ACCEPT when the next poll occurs or when commitSync/commitAsync is called.
-	 * <p>
-	 * When set to {@code true}, the application must explicitly acknowledge each
-	 * record using the provided {@link ShareAcknowledgment}.
-	 * @param explicitShareAcknowledgment true for explicit acknowledgment, false for implicit
-	 * @since 4.0
-	 * @see ShareAcknowledgment
-	 */
-	public void setExplicitShareAcknowledgment(boolean explicitShareAcknowledgment) {
-		this.explicitShareAcknowledgment = explicitShareAcknowledgment;
-	}
-
-	/**
-	 * Check whether explicit acknowledgment is required for share consumer containers.
-	 * @return true if explicit acknowledgment is required, false for implicit acknowledgment
-	 */
-	public boolean isExplicitShareAcknowledgment() {
-		return this.explicitShareAcknowledgment;
-	}
-
-	/**
-	 * Set the timeout for share acknowledgments in explicit mode.
-	 * <p>
-	 * When a record is not acknowledged within this timeout, a warning
-	 * will be logged to help identify missing acknowledgment calls.
-	 * This only applies when using explicit acknowledgment mode.
-	 * <p>
-	 * Default is 30 seconds.
-	 * @param shareAcknowledgmentTimeout the timeout duration
-	 * @since 4.0
-	 */
-	public void setShareAcknowledgmentTimeout(Duration shareAcknowledgmentTimeout) {
-		this.shareAcknowledgmentTimeout = shareAcknowledgmentTimeout;
-	}
-
-	/**
-	 * Get the timeout for share acknowledgments in explicit mode.
-	 * @return the acknowledgment timeout
-	 * @since 4.0
-	 */
-	public Duration getShareAcknowledgmentTimeout() {
-		return this.shareAcknowledgmentTimeout;
 	}
 
 	@Override
@@ -1230,7 +1149,6 @@ public class ContainerProperties extends ConsumerProperties {
 		// Metrics and observation
 		appendProperty(sb, "micrometerEnabled", this.micrometerEnabled);
 		appendProperty(sb, "observationEnabled", this.observationEnabled);
-		appendProperty(sb, "recordObservationsInBatch", this.recordObservationsInBatch);
 		appendProperty(sb, "observationConvention", this.observationConvention);
 		appendProperty(sb, "observationRegistry", this.observationRegistry);
 

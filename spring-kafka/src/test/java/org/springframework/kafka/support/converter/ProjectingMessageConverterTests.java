@@ -54,14 +54,14 @@ public class ProjectingMessageConverterTests {
 
 	private static final Bytes BYTES_PAYLOAD = Bytes.wrap(BYTE_ARRAY_PAYLOAD);
 
-	private final JacksonProjectingMessageConverter converter = new JacksonProjectingMessageConverter();
+	private final ProjectingMessageConverter converter = new ProjectingMessageConverter();
 
 	@Mock
 	private ConsumerRecord<?, ?> record;
 
 	@Test
 	public void rejectsNullObjectMapper() {
-		assertThatIllegalArgumentException().isThrownBy(() -> new JacksonProjectingMessageConverter(null, null));
+		assertThatIllegalArgumentException().isThrownBy(() -> new ProjectingMessageConverter(null, null));
 	}
 
 	@Test

@@ -31,7 +31,7 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.requestreply.RequestReplyTypedMessageFuture
-import org.springframework.kafka.support.converter.ByteArrayJacksonJsonMessageConverter
+import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.messaging.support.MessageBuilder
 import java.util.concurrent.TimeUnit
@@ -63,42 +63,40 @@ class Application {
     }
 
     @Bean
-    fun <K : Any, V : Any> kafkaTemplate(pf: ProducerFactory<K, V>?): KafkaTemplate<K, V> {
-        return KafkaTemplate<K, V>(pf!!)
-    }
+    fun kafkaTemplate(pf: ProducerFactory<*, *>?) = KafkaTemplate(pf)
 
 // tag::beans[]
     @Bean
     fun template(
-        pf: ProducerFactory<String, String>,
-        factory: ConcurrentKafkaListenerContainerFactory<String, String>
-    ): ReplyingKafkaTemplate<String, String, String> {
+        pf: ProducerFactory<String?, String>?,
+        factory: ConcurrentKafkaListenerContainerFactory<String?, String?>
+    ): ReplyingKafkaTemplate<String?, String, String?> {
         val replyContainer = factory.createContainer("replies")
-        replyContainer.containerProperties.setGroupId("request.replies")
-        val template = ReplyingKafkaTemplate<String, String, String>(pf, replyContainer)
-        template.messageConverter = ByteArrayJacksonJsonMessageConverter()
-        template.setDefaultTopic("requests")
+        replyContainer.containerProperties.groupId = "request.replies"
+        val template = ReplyingKafkaTemplate(pf, replyContainer)
+        template.messageConverter = ByteArrayJsonMessageConverter()
+        template.defaultTopic = "requests"
         return template
     }
 // end::beans[]
 
     @Bean
-    fun runner(template: ReplyingKafkaTemplate<String, String, String>): ApplicationRunner {
+    fun runner(template: ReplyingKafkaTemplate<String?, String?, String?>): ApplicationRunner {
         return ApplicationRunner { _ ->
 // tag::sendReceive[]
-            val future1: RequestReplyTypedMessageFuture<String, String, Thing> =
+            val future1: RequestReplyTypedMessageFuture<String?, String?, Thing?>? =
                 template.sendAndReceive(MessageBuilder.withPayload("getAThing").build(),
-                    object : ParameterizedTypeReference<Thing>() {})
-            log.info(future1.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata.toString())
-            val thing = future1.get(10, TimeUnit.SECONDS).payload
+                    object : ParameterizedTypeReference<Thing?>() {})
+            log.info(future1?.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata?.toString())
+            val thing = future1?.get(10, TimeUnit.SECONDS)?.payload
             log.info(thing.toString())
 
-            val future2: RequestReplyTypedMessageFuture<String, String, List<Thing>> =
+            val future2: RequestReplyTypedMessageFuture<String?, String?, List<Thing?>?>? =
                 template.sendAndReceive(MessageBuilder.withPayload("getThings").build(),
-                    object : ParameterizedTypeReference<List<Thing>>() {})
-            log.info(future2.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata.toString())
-            val things = future2.get(10, TimeUnit.SECONDS).payload
-            things.forEach { thing1 -> log.info(thing1.toString()) }
+                    object : ParameterizedTypeReference<List<Thing?>?>() {})
+            log.info(future2?.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata.toString())
+            val things = future2?.get(10, TimeUnit.SECONDS)?.payload
+            things?.forEach(Consumer { thing1: Thing? -> log.info(thing1.toString()) })
 // end::sendReceive[]
         }
     }

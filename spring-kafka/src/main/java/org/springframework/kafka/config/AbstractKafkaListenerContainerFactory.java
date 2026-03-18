@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.LogFactory;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -61,7 +60,6 @@ import org.springframework.util.Assert;
  * @author Stephane Nicoll
  * @author Gary Russell
  * @author Artem Bilan
- * @author Christian Fredriksson
  *
  * @see AbstractMessageListenerContainer
  */
@@ -72,49 +70,49 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 
 	private final ContainerProperties containerProperties = new ContainerProperties((Pattern) null); // NOSONAR
 
-	private @Nullable CommonErrorHandler commonErrorHandler;
+	private CommonErrorHandler commonErrorHandler;
 
-	private @Nullable ConsumerFactory<? super K, ? super V> consumerFactory;
+	private ConsumerFactory<? super K, ? super V> consumerFactory;
 
-	private @Nullable Boolean autoStartup;
+	private Boolean autoStartup;
 
-	private @Nullable Integer phase;
+	private Integer phase;
 
-	private @Nullable RecordMessageConverter recordMessageConverter;
+	private RecordMessageConverter recordMessageConverter;
 
-	private @Nullable BatchMessageConverter batchMessageConverter;
+	private BatchMessageConverter batchMessageConverter;
 
-	private @Nullable RecordFilterStrategy<? super K, ? super V> recordFilterStrategy;
+	private RecordFilterStrategy<? super K, ? super V> recordFilterStrategy;
 
-	private @Nullable Boolean ackDiscarded;
+	private Boolean ackDiscarded;
 
-	private @Nullable Boolean batchListener;
+	private Boolean batchListener;
 
-	private @Nullable ApplicationEventPublisher applicationEventPublisher;
+	private ApplicationEventPublisher applicationEventPublisher;
 
-	private @Nullable KafkaTemplate<?, ?> replyTemplate;
+	private KafkaTemplate<?, ?> replyTemplate;
 
-	private @Nullable AfterRollbackProcessor<? super K, ? super V> afterRollbackProcessor;
+	private AfterRollbackProcessor<? super K, ? super V> afterRollbackProcessor;
 
-	private @Nullable ReplyHeadersConfigurer replyHeadersConfigurer;
+	private ReplyHeadersConfigurer replyHeadersConfigurer;
 
-	private @Nullable Boolean missingTopicsFatal;
+	private Boolean missingTopicsFatal;
 
-	private @Nullable RecordInterceptor<K, V> recordInterceptor;
+	private RecordInterceptor<K, V> recordInterceptor;
 
-	private @Nullable BatchInterceptor<K, V> batchInterceptor;
+	private BatchInterceptor<K, V> batchInterceptor;
 
-	private @Nullable BatchToRecordAdapter<K, V> batchToRecordAdapter;
+	private BatchToRecordAdapter<K, V> batchToRecordAdapter;
 
-	private @Nullable ApplicationContext applicationContext;
+	private ApplicationContext applicationContext;
 
-	private @Nullable ContainerCustomizer<K, V, C> containerCustomizer;
+	private ContainerCustomizer<K, V, C> containerCustomizer;
 
-	private @Nullable String correlationHeaderName;
+	private String correlationHeaderName;
 
-	private @Nullable Boolean changeConsumerThreadName;
+	private Boolean changeConsumerThreadName;
 
-	private @Nullable Function<MessageListenerContainer, String> threadNameSupplier;
+	private Function<MessageListenerContainer, String> threadNameSupplier;
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -129,7 +127,7 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 		this.consumerFactory = consumerFactory;
 	}
 
-	public @Nullable ConsumerFactory<? super K, ? super V> getConsumerFactory() {
+	public ConsumerFactory<? super K, ? super V> getConsumerFactory() {
 		return this.consumerFactory;
 	}
 
@@ -192,7 +190,7 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 	 * @return true for a batch listener.
 	 * @since 1.1
 	 */
-	public @Nullable Boolean isBatchListener() {
+	public Boolean isBatchListener() {
 		return this.batchListener;
 	}
 
@@ -277,15 +275,6 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 	}
 
 	/**
-	 * Get the {@link RecordInterceptor} for modification, if configured.
-	 * @return the {@link RecordInterceptor}, or {@code null} if not configured
-	 * @since 4.0
-	 */
-	public @Nullable RecordInterceptor<K, V> getRecordInterceptor() {
-		return this.recordInterceptor;
-	}
-
-	/**
 	 * Set an interceptor to be called before calling the listener.
 	 * Only used with record listeners.
 	 * @param recordInterceptor the interceptor.
@@ -294,15 +283,6 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 	 */
 	public void setRecordInterceptor(RecordInterceptor<K, V> recordInterceptor) {
 		this.recordInterceptor = recordInterceptor;
-	}
-
-	/**
-	 * Get the {@link BatchInterceptor} for modification, if configured.
-	 * @return the {@link BatchInterceptor}, or {@code null} if not configured
-	 * @since 4.0
-	 */
-	public @Nullable BatchInterceptor<K, V> getBatchInterceptor() {
-		return this.batchInterceptor;
 	}
 
 	/**
@@ -368,7 +348,7 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 		this.threadNameSupplier = threadNameSupplier;
 	}
 
-	@SuppressWarnings({"unchecked", "NullAway"})
+	@SuppressWarnings("unchecked")
 	@Override
 	public C createListenerContainer(KafkaListenerEndpoint endpoint) {
 		C instance = createContainerInstance(endpoint);
@@ -390,7 +370,6 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 		return instance;
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	private void configureEndpoint(AbstractKafkaListenerEndpoint<K, V> aklEndpoint) {
 		if (aklEndpoint.getRecordFilterStrategy() == null) {
 			JavaUtils.INSTANCE
@@ -422,7 +401,7 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 	 * @param instance the container instance to configure.
 	 * @param endpoint the endpoint.
 	 */
-	@SuppressWarnings({"NullAway"})
+	@SuppressWarnings("deprecation")
 	protected void initializeContainer(C instance, KafkaListenerEndpoint endpoint) {
 		ContainerProperties properties = instance.getContainerProperties();
 		BeanUtils.copyProperties(this.containerProperties, properties, "topics", "topicPartitions", "topicPattern",
@@ -456,9 +435,7 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 				.acceptIfHasText(endpoint.getClientIdPrefix(), instance.getContainerProperties()::setClientId)
 				.acceptIfNotNull(endpoint.getConsumerProperties(),
 						instance.getContainerProperties()::setKafkaConsumerProperties)
-				.acceptIfNotNull(endpoint.getListenerInfo(), instance::setListenerInfo)
-				.acceptIfNotNull(endpoint.getAckMode(), ackMode ->
-						properties.setAckMode(ContainerProperties.AckMode.valueOf(ackMode.toUpperCase())));
+				.acceptIfNotNull(endpoint.getListenerInfo(), instance::setListenerInfo);
 	}
 
 	@Override

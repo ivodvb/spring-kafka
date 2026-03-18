@@ -22,8 +22,8 @@ import java.util.Map;
 
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serializer;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -86,7 +86,7 @@ public class ToStringSerializer<T> implements Serializer<T> {
 	}
 
 	@Override
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
+	@Nullable
 	public byte[] serialize(String topic, @Nullable Headers headers, @Nullable T data) {
 		if (data == null) {
 			return null;

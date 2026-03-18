@@ -24,7 +24,8 @@ import java.util.function.Supplier;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * The strategy to produce a {@link Producer} instance(s).
@@ -114,8 +115,7 @@ public interface ProducerFactory<K, V> {
 	 * @return the supplier.
 	 * @since 2.5
 	 */
-	@Nullable
-	default Supplier<@Nullable Serializer<V>> getValueSerializerSupplier() {
+	default Supplier<Serializer<V>> getValueSerializerSupplier() {
 		return () -> null;
 	}
 
@@ -125,8 +125,7 @@ public interface ProducerFactory<K, V> {
 	 * @return the supplier.
 	 * @since 2.5
 	 */
-	@Nullable
-	default Supplier<@Nullable Serializer<K>> getKeySerializerSupplier() {
+	default Supplier<Serializer<K>> getKeySerializerSupplier() {
 		return () -> null;
 	}
 
@@ -278,7 +277,7 @@ public interface ProducerFactory<K, V> {
 	 * @since 2.5.17
 	 * @see org.springframework.kafka.core.KafkaTemplate#KafkaTemplate(ProducerFactory, java.util.Map)
 	 */
-	default ProducerFactory<K, V> copyWithConfigurationOverride(@Nullable Map<String, Object> overrideProperties) {
+	default ProducerFactory<K, V> copyWithConfigurationOverride(Map<String, Object> overrideProperties) {
 		throw new UnsupportedOperationException(
 				"This factory implementation doesn't support creating reconfigured copies.");
 	}

@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 /**
  * An event published when a consumer is stopped. While it is best practice to use
  * stateless listeners, you can consume this event to clean up any thread-based resources
@@ -26,13 +24,11 @@ import java.io.Serial;
  * to restart a container that was stopped because a transactional producer was fenced.
  *
  * @author Gary Russell
- * @author Lokesh Alamuri
  * @since 2.2
  *
  */
 public class ConsumerStoppedEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -46,13 +42,6 @@ public class ConsumerStoppedEvent extends KafkaEvent {
 		 * The consumer was stopped because the container was stopped.
 		 */
 		NORMAL,
-
-		/**
-		 * The consumer was stopped because the container was stopped abnormally.
-		 * @since 4.0
-		 *
-		 */
-		ABNORMAL,
 
 		/**
 		 * The transactional producer was fenced and the container

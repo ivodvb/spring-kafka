@@ -19,7 +19,6 @@ package org.springframework.kafka.listener;
 import java.util.List;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
 
@@ -40,7 +39,7 @@ import org.springframework.kafka.support.Acknowledgment;
 public interface BatchAcknowledgingMessageListener<K, V> extends BatchMessageListener<K, V> {
 
 	/**
-	 * Invoked with data from kafka. Containers should never call this since they
+	 * Invoked with data from kafka. Containers should never call this since it they
 	 * will detect that we are an acknowledging listener.
 	 * @param data the data to be processed.
 	 */
@@ -50,6 +49,6 @@ public interface BatchAcknowledgingMessageListener<K, V> extends BatchMessageLis
 	}
 
 	@Override
-	void onMessage(List<ConsumerRecord<K, V>> data, @Nullable Acknowledgment acknowledgment);
+	void onMessage(List<ConsumerRecord<K, V>> data, Acknowledgment acknowledgment);
 
 }

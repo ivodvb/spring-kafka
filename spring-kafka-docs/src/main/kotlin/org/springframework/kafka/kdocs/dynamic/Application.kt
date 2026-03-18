@@ -60,8 +60,8 @@ private fun createContainer(
     factory: ConcurrentKafkaListenerContainerFactory<String, String>, topic: String, group: String
 ): ConcurrentMessageListenerContainer<String, String> {
     val container = factory.createContainer(topic)
-    container.containerProperties.setMessageListener(MyListener())
-    container.containerProperties.setGroupId(group)
+    container.containerProperties.messageListener = MyListener()
+    container.containerProperties.groupId = group
     container.beanName = group
     container.start()
     return container
@@ -104,10 +104,9 @@ fun pojo(id: String, topic: String): MyPojo {
 
 // tag::listener[]
 
-class MyListener : MessageListener<String, String> {
+class MyListener : MessageListener<String?, String?> {
 
-    override fun onMessage(data: ConsumerRecord<String, String>) {
-
+    override fun onMessage(data: ConsumerRecord<String?, String?>) {
         // ...
     }
 

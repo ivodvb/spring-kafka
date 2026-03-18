@@ -17,19 +17,15 @@
 package org.springframework.kafka.support;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.apache.kafka.streams.kstream.Branched;
-import org.apache.kafka.streams.kstream.BranchedKStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
-import org.jspecify.annotations.Nullable;
 
 /**
- * Provides a method-chaining way to build {@link org.apache.kafka.streams.kstream.BranchedKStream#branch(Predicate) branches} in
+ * Provides a method-chaining way to build {@link org.apache.kafka.streams.kstream.KStream#branch branches} in
  * Kafka Streams processor topology.
  * <p>
  * Example of usage:
@@ -49,7 +45,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Ivan Ponomarev
  * @author Artem Bilan
- * @author Soby Chacko
  *
  * @since 2.2.4
  */
@@ -59,7 +54,7 @@ public final class KafkaStreamBrancher<K, V> {
 
 	private final List<Consumer<? super KStream<K, V>>> consumerList = new ArrayList<>();
 
-	private @Nullable Consumer<? super KStream<K, V>> defaultConsumer;
+	private Consumer<? super KStream<K, V>> defaultConsumer;
 
 	/**
 	 * Defines a new branch.
@@ -88,36 +83,22 @@ public final class KafkaStreamBrancher<K, V> {
 
 	/**
 	 * Terminating method that builds branches on top of given {@code KStream}.
-	 * Applies each predicate-consumer pair sequentially to create branches.
-	 * If a default consumer exists, it will handle all records that don't match any predicates.
 	 * @param stream {@code KStream} to split
-	 * @return the processed stream
-	 * @throws NullPointerException if stream is null
-	 * @throws IllegalStateException if number of predicates doesn't match number of consumers
+	 * @return the provided stream
 	 */
 	public KStream<K, V> onTopOf(KStream<K, V> stream) {
 		if (this.defaultConsumer != null) {
 			this.predicateList.add((k, v) -> true);
 			this.consumerList.add(this.defaultConsumer);
 		}
-		// Validate predicate and consumer lists match
-		if (this.predicateList.size() != this.consumerList.size()) {
-			throw new IllegalStateException("Number of predicates (" + this.predicateList.size() +
-					") must match number of consumers (" + this.consumerList.size() + ")");
-		}
-
-		BranchedKStream<K, V> branchedKStream = stream.split();
-		Iterator<Consumer<? super KStream<K, V>>> consumerIterator = this.consumerList.iterator();
-
-		// Process each predicate-consumer pair
-		for (Predicate<? super K, ? super V> predicate : this.predicateList) {
-			branchedKStream = branchedKStream.branch(predicate,
-					Branched.withConsumer(adaptConsumer(consumerIterator.next())));
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Predicate<? super K, ? super V>[] predicates = this.predicateList.toArray(new Predicate[0]);
+		@SuppressWarnings("deprecation")
+		KStream<K, V>[] result = stream.branch(predicates);
+		for (int i = 0; i < this.consumerList.size(); i++) {
+			this.consumerList.get(i).accept(result[i]);
 		}
 		return stream;
 	}
 
-	private Consumer<KStream<K, V>> adaptConsumer(Consumer<? super KStream<K, V>> consumer) {
-		return consumer::accept;
-	}
 }

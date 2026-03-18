@@ -16,11 +16,9 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
 import java.util.Collection;
 
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 /**
  * An event published when a consumer is paused.
@@ -31,10 +29,9 @@ import org.jspecify.annotations.Nullable;
  */
 public class ConsumerPausedEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
-	private final @Nullable String reason;
+	private final String reason;
 
 	private transient Collection<TopicPartition> partitions;
 

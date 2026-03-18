@@ -23,8 +23,6 @@ import java.util.function.Consumer;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -42,6 +40,8 @@ import org.springframework.kafka.support.EndpointHandlerMethod;
 import org.springframework.kafka.support.EndpointHandlerMultiMethod;
 import org.springframework.kafka.support.KafkaUtils;
 import org.springframework.kafka.support.TopicForRetryable;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 /**
  *
@@ -76,7 +76,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  * ContainerProperties' idlePartitionEventInterval property.
  * property, a {@link org.springframework.kafka.event.ListenerContainerPartitionIdleEvent}
  * is published, which the {@link org.springframework.kafka.listener.KafkaConsumerBackoffManager}
- * listens to in order to check whether it should unpause the partition.
+ * listens to in order to check whether or not it should unpause the partition.
  *
  * <p>If, when consumption is resumed, processing fails again, the message is forwarded to
  * the next topic and so on, until it gets to the dlt.
@@ -135,7 +135,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  *         }</code>
  * </pre>
  * <p>Some other options include: auto-creation of topics, backoff,
- * retryOn / notRetryOn / transversing as in {@link org.springframework.core.retry.RetryTemplate},
+ * retryOn / notRetryOn / transversing as in {@link org.springframework.retry.support.RetryTemplate},
  * single-topic fixed backoff processing, custom dlt listener beans, custom topic
  * suffixes and providing specific listenerContainerFactories.
  *
@@ -145,7 +145,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  *
  * <pre>
  *     <code>@RetryableTopic(attempts = 3,
- *     		backOff = @BackOff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
+ *     		backoff = @Backoff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
  *     <code>@KafkaListener(topics = "my-annotated-topic")
  *     public void processMessage(MyPojo message) {
  *        		// ... message processing
@@ -155,7 +155,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  * {@link org.springframework.kafka.annotation.KafkaListener} annotated class, such as:
  * <pre>
  *     <code>@RetryableTopic(attempts = 3,
- *     		backOff = @BackOff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
+ *     		backoff = @Backoff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
  *     <code>@KafkaListener(topics = "my-annotated-topic")
  *     static class ListenerBean {
  *         <code> @KafkaHandler
@@ -168,7 +168,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  * {@link org.springframework.kafka.annotation.KafkaListener} annotated class, such as:
  * <pre>
  *     <code>@RetryableTopic(attempts = 3,
- *     		backOff = @BackOff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
+ *     		backoff = @Backoff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
  *     <code>@KafkaListener(topics = "my-annotated-topic")
  *     static class ListenerBean {
  *         <code> @KafkaHandler
@@ -179,7 +179,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  *</pre>
  * <p> Or through meta-annotations, such as:
  * <pre>
- *     <code>@RetryableTopic(backOff = @BackOff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
+ *     <code>@RetryableTopic(backoff = @Backoff(delay = 700, maxDelay = 12000, multiplier = 3))</code>
  *     <code>public @interface WithExponentialBackoffRetry {</code>
  *     <code>   	{@literal @}AliasFor(attribute = "attempts", annotation = RetryableTopic.class)
  *        	String retries();
@@ -245,7 +245,7 @@ import org.springframework.kafka.support.TopicForRetryable;
  * @see RetryTopicConfigurationBuilder
  * @see org.springframework.kafka.annotation.RetryableTopic
  * @see org.springframework.kafka.annotation.KafkaListener
- * @see org.springframework.kafka.annotation.BackOff
+ * @see org.springframework.retry.annotation.Backoff
  * @see org.springframework.kafka.listener.DefaultErrorHandler
  * @see org.springframework.kafka.listener.DeadLetterPublishingRecoverer
  *
@@ -266,7 +266,6 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 
 	private final ListenerContainerFactoryConfigurer listenerContainerFactoryConfigurer;
 
-	@SuppressWarnings("NullAway.Init")
 	private BeanFactory beanFactory;
 
 	private final RetryTopicNamesProviderFactory retryTopicNamesProviderFactory;
@@ -324,7 +323,7 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 
 	private void configureEndpoints(MethodKafkaListenerEndpoint<?, ?> mainEndpoint,
 									EndpointProcessor endpointProcessor,
-									@Nullable KafkaListenerContainerFactory<?> factory,
+									KafkaListenerContainerFactory<?> factory,
 									KafkaListenerEndpointRegistrar registrar,
 									RetryTopicConfiguration configuration,
 									DestinationTopicProcessor.Context context,
@@ -344,7 +343,7 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 	}
 
 	private void processAndRegisterEndpoint(MethodKafkaListenerEndpoint<?, ?> mainEndpoint, EndpointProcessor endpointProcessor,
-											@Nullable KafkaListenerContainerFactory<?> factory,
+											KafkaListenerContainerFactory<?> factory,
 											String defaultFactoryBeanName,
 											KafkaListenerEndpointRegistrar registrar,
 											RetryTopicConfiguration configuration, DestinationTopicProcessor.Context context,
@@ -384,8 +383,8 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 				.customizeEndpointAndCollectTopics(endpoint)
 				.forEach(topicNamesHolder ->
 						this.destinationTopicProcessor
-								.registerDestinationTopic(topicNamesHolder.mainTopic(),
-										topicNamesHolder.customizedTopic(),
+								.registerDestinationTopic(topicNamesHolder.getMainTopic(),
+										topicNamesHolder.getCustomizedTopic(),
 										destinationTopicProperties, context));
 
 		registrar.registerEndpoint(endpoint, resolvedFactory);
@@ -455,7 +454,7 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 	}
 
 	private KafkaListenerContainerFactory<?> resolveAndConfigureFactoryForMainEndpoint(
-			@Nullable KafkaListenerContainerFactory<?> providedFactory,
+			KafkaListenerContainerFactory<?> providedFactory,
 			String defaultFactoryBeanName, RetryTopicConfiguration configuration) {
 
 		ConcurrentKafkaListenerContainerFactory<?, ?> resolvedFactory = this.containerFactoryResolver
@@ -466,7 +465,7 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 	}
 
 	private KafkaListenerContainerFactory<?> resolveAndConfigureFactoryForRetryEndpoint(
-			@Nullable KafkaListenerContainerFactory<?> providedFactory,
+			KafkaListenerContainerFactory<?> providedFactory,
 			String defaultFactoryBeanName,
 			RetryTopicConfiguration configuration) {
 
@@ -498,7 +497,7 @@ public class RetryTopicConfigurer implements BeanFactoryAware {
 
 	static class LoggingDltListenerHandlerMethod {
 
-		static final String DEFAULT_DLT_METHOD_NAME = "logMessage";
+		public static final String DEFAULT_DLT_METHOD_NAME = "logMessage";
 
 		public void logMessage(Object message, @NonNull Acknowledgment ack) {
 			if (message instanceof ConsumerRecord) {

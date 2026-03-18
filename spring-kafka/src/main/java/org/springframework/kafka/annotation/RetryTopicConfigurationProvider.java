@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.logging.LogFactory;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -36,7 +35,7 @@ import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.retrytopic.RetryTopicConfiguration;
-import org.springframework.util.Assert;
+import org.springframework.lang.Nullable;
 
 /**
  *
@@ -121,7 +120,6 @@ public class RetryTopicConfigurationProvider {
 		RetryableTopic annotation = getRetryableTopicAnnotationFromAnnotatedElement(
 				Objects.requireNonNullElse(method, clazz));
 		Class<?> declaringClass = method != null ? method.getDeclaringClass() : clazz;
-		Assert.state(declaringClass != null, "No declaring class found for " + method);
 		return annotation != null
 				? new RetryableTopicAnnotationProcessor(this.beanFactory, this.resolver, this.expressionContext)
 				.processAnnotation(topics, declaringClass, annotation, bean)

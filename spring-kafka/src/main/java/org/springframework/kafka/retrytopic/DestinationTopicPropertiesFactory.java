@@ -25,11 +25,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
-import org.jspecify.annotations.Nullable;
-
+import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.retrytopic.DestinationTopic.Type;
-import org.springframework.kafka.support.ExceptionMatcher;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -81,7 +80,7 @@ public class DestinationTopicPropertiesFactory {
 	 * @param retryTopicSuffix the suffix.
 	 * @param dltSuffix the dlt suffix.
 	 * @param backOffValues the back off values.
-	 * @param exceptionMatcher the exception matcher.
+	 * @param exceptionClassifier the exception classifier.
 	 * @param numPartitions the number of partitions.
 	 * @param kafkaOperations the operations.
 	 * @param dltStrategy the dlt strategy.
@@ -91,14 +90,14 @@ public class DestinationTopicPropertiesFactory {
 	 * @since 3.0.12
 	 */
 	public DestinationTopicPropertiesFactory(String retryTopicSuffix, String dltSuffix, List<Long> backOffValues,
-			ExceptionMatcher exceptionMatcher,
+			BinaryExceptionClassifier exceptionClassifier,
 			int numPartitions, KafkaOperations<?, ?> kafkaOperations,
 			DltStrategy dltStrategy,
 			TopicSuffixingStrategy topicSuffixingStrategy,
 			SameIntervalTopicReuseStrategy sameIntervalTopicReuseStrategy,
 			long timeout) {
 
-		this(retryTopicSuffix, dltSuffix, backOffValues, exceptionMatcher, numPartitions, kafkaOperations,
+		this(retryTopicSuffix, dltSuffix, backOffValues, exceptionClassifier, numPartitions, kafkaOperations,
 				dltStrategy, topicSuffixingStrategy, sameIntervalTopicReuseStrategy, timeout, Collections.emptyMap());
 	}
 
@@ -107,7 +106,7 @@ public class DestinationTopicPropertiesFactory {
 	 * @param retryTopicSuffix the suffix.
 	 * @param dltSuffix the dlt suffix.
 	 * @param backOffValues the back off values.
-	 * @param exceptionMatcher the exception matcher.
+	 * @param exceptionClassifier the exception classifier.
 	 * @param numPartitions the number of partitions.
 	 * @param kafkaOperations the operations.
 	 * @param dltStrategy the dlt strategy.
@@ -117,8 +116,8 @@ public class DestinationTopicPropertiesFactory {
 	 * @param dltRoutingRules the specification of which DLT should be used for the particular exception type
 	 * @since 3.2.0
 	 */
-	public DestinationTopicPropertiesFactory(@Nullable String retryTopicSuffix, @Nullable String dltSuffix, List<Long> backOffValues,
-			ExceptionMatcher exceptionMatcher,
+	public DestinationTopicPropertiesFactory(String retryTopicSuffix, String dltSuffix, List<Long> backOffValues,
+			BinaryExceptionClassifier exceptionClassifier,
 			int numPartitions, KafkaOperations<?, ?> kafkaOperations,
 			DltStrategy dltStrategy,
 			TopicSuffixingStrategy topicSuffixingStrategy,
@@ -140,7 +139,7 @@ public class DestinationTopicPropertiesFactory {
 		// Max Attempts to include the initial try.
 		this.maxAttempts = backOffValuesSize + 1;
 		this.shouldRetryOn = (attempt, throwable) -> attempt < this.maxAttempts
-				&& exceptionMatcher.match(throwable);
+				&& exceptionClassifier.classify(throwable);
 		this.retryTopicsAmount = backOffValuesSize - reusableTopicAttempts();
 	}
 
@@ -253,7 +252,7 @@ public class DestinationTopicPropertiesFactory {
 
 		private final String dltSuffix;
 
-		public DestinationTopicSuffixes(@Nullable String retryTopicSuffix, @Nullable String dltSuffix) {
+		public DestinationTopicSuffixes(String retryTopicSuffix, String dltSuffix) {
 			this.retryTopicSuffix = StringUtils.hasText(retryTopicSuffix)
 					? retryTopicSuffix
 					: RetryTopicConstants.DEFAULT_RETRY_SUFFIX;

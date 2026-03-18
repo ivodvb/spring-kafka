@@ -17,7 +17,8 @@
 package org.springframework.kafka.listener;
 
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Handler for the provided back off time, listener container and exception.
@@ -35,7 +36,7 @@ public interface BackOffHandler {
 	 * @param exception the exception.
 	 * @param nextBackOff the next back off.
 	 */
-	default void onNextBackOff(@Nullable MessageListenerContainer container, @Nullable Exception exception, long nextBackOff) {
+	default void onNextBackOff(@Nullable MessageListenerContainer container, Exception exception, long nextBackOff) {
 		throw new UnsupportedOperationException();
 	}
 

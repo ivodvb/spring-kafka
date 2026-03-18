@@ -24,9 +24,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.KafkaUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.util.backoff.BackOff;
 
 /**

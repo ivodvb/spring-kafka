@@ -19,14 +19,13 @@ package org.springframework.kafka.listener;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 
@@ -141,7 +140,7 @@ public class ListenerContainerPauseService {
 	 * Callers must ensure this.registry is not null before calling.
 	 */
 	private Optional<MessageListenerContainer> getListenerContainer(String listenerId) {
-		MessageListenerContainer messageListenerContainer = Objects.requireNonNull(this.registry).getListenerContainer(listenerId); // NOSONAR
+		MessageListenerContainer messageListenerContainer = this.registry.getListenerContainer(listenerId); // NOSONAR
 		if (messageListenerContainer == null) {
 			LOGGER.warn(() -> "MessageListenerContainer " + listenerId + " does not exists");
 		}

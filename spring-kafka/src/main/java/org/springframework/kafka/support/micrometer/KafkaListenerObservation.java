@@ -21,9 +21,9 @@ import io.micrometer.common.docs.KeyName;
 import io.micrometer.observation.Observation.Context;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.docs.ObservationDocumentation;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -231,7 +231,7 @@ public enum KafkaListenerObservation implements ObservationDocumentation {
 			KeyValues keyValues = KeyValues.of(
 					ListenerLowCardinalityTags.LISTENER_ID.withValue(context.getListenerId()),
 					ListenerLowCardinalityTags.MESSAGING_SYSTEM.withValue("kafka"),
-					ListenerLowCardinalityTags.MESSAGING_OPERATION.withValue("process"),
+					ListenerLowCardinalityTags.MESSAGING_OPERATION.withValue("receive"),
 					ListenerLowCardinalityTags.MESSAGING_SOURCE_NAME.withValue(context.getSource()),
 					ListenerLowCardinalityTags.MESSAGING_SOURCE_KIND.withValue("topic")
 			);
@@ -269,7 +269,7 @@ public enum KafkaListenerObservation implements ObservationDocumentation {
 
 		@Override
 		public String getContextualName(KafkaRecordReceiverContext context) {
-			return context.getSource() + " process";
+			return context.getSource() + " receive";
 		}
 
 		private static @Nullable String getConsumerId(@Nullable String groupId, @Nullable String clientId) {

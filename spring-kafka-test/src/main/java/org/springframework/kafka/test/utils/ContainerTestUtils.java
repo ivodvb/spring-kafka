@@ -16,16 +16,12 @@
 
 package org.springframework.kafka.test.utils;
 
-import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jspecify.annotations.Nullable;
-
-import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -56,7 +52,6 @@ public final class ContainerTestUtils {
 			return;
 		}
 		List<?> containers = KafkaTestUtils.getPropertyValue(container, "containers", List.class);
-		Assert.notNull(containers, "Containers must not be null");
 		int n = 0;
 		int count = 0;
 		Method getAssignedPartitions = null;
@@ -122,18 +117,18 @@ public final class ContainerTestUtils {
 	}
 
 	private static Method getAssignedPartitionsMethod(Class<?> clazz) {
-		final AtomicReference<@Nullable Method> theMethod = new AtomicReference<>();
+		final AtomicReference<Method> theMethod = new AtomicReference<Method>();
 		ReflectionUtils.doWithMethods(clazz,
-				theMethod::set,
+				method -> theMethod.set(method),
 				method -> method.getName().equals("getAssignedPartitions") && method.getParameterTypes().length == 0);
-		Method method = theMethod.get();
-		Assert.state(method != null, "No getAssignedPartitions() method");
-		return method;
+		if (theMethod.get() == null) {
+			throw new IllegalStateException(clazz + " has no getAssignedPartitions() method");
+		}
+		return theMethod.get();
 	}
 
 	private static class ContainerTestUtilsException extends RuntimeException {
 
-		@Serial
 		private static final long serialVersionUID = 1L;
 
 		ContainerTestUtilsException(String message, Throwable cause) {

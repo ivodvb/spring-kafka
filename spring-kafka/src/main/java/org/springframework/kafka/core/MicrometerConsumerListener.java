@@ -23,7 +23,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.scheduling.TaskScheduler;
 
@@ -85,7 +84,7 @@ public class MicrometerConsumerListener<K, V> extends KafkaMetricsSupport<Consum
 	}
 
 	@Override
-	public synchronized void consumerRemoved(@Nullable String id, Consumer<K, V> consumer) {
+	public synchronized void consumerRemoved(String id, Consumer<K, V> consumer) {
 		unbindClient(id, consumer);
 	}
 

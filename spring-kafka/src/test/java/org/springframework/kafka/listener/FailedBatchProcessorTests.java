@@ -67,7 +67,7 @@ public class FailedBatchProcessorTests {
 
 
 		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("topic", 0),
-				List.of(mock(ConsumerRecord.class), mock(ConsumerRecord.class))), Map.of());
+				List.of(mock(ConsumerRecord.class), mock(ConsumerRecord.class))));
 		assertThatIllegalStateException().isThrownBy(() -> testFBP.handle(new BatchListenerFailedException("test", 3),
 					records, mock(Consumer.class), mock(MessageListenerContainer.class), mock(Runnable.class)))
 				.withMessage("fallback");
@@ -90,8 +90,7 @@ public class FailedBatchProcessorTests {
 
 		ConsumerRecord rec1 = new ConsumerRecord("topic", 0, 0L, null, null);
 		ConsumerRecord rec2 = new ConsumerRecord("topic", 0, 1L, null, null);
-		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("topic", 0), List.of(rec1, rec2)),
-				Map.of());
+		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("topic", 0), List.of(rec1, rec2)));
 		ConsumerRecord unknownRecord = new ConsumerRecord("topic", 42, 123L, null, null);
 		assertThatIllegalStateException().isThrownBy(() ->
 					testFBP.handle(new BatchListenerFailedException("topic", unknownRecord),
@@ -113,8 +112,7 @@ public class FailedBatchProcessorTests {
 		ConsumerRecord rec2 = new ConsumerRecord("topic", 0, 1L, null, null);
 		ConsumerRecord rec3 = new ConsumerRecord("topic", 0, 2L, null, null);
 
-		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("topic", 0), List.of(rec1, rec2, rec3)),
-				Map.of());
+		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("topic", 0), List.of(rec1, rec2, rec3)));
 		TestFBP testFBP = new TestFBP((rec, ex) -> { }, new FixedBackOff(2L, 2L), mockEH);
 		final Consumer consumer = mock(Consumer.class);
 		willThrow(new RebalanceInProgressException("rebalance in progress")).given(consumer).commitSync(anyMap(), any());

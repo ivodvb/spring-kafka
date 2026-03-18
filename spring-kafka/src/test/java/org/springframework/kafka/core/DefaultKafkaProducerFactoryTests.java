@@ -70,7 +70,7 @@ import static org.mockito.Mockito.verify;
  */
 public class DefaultKafkaProducerFactoryTests {
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void testProducerClosedAfterBadTransition() {
 		final Producer producer = mock(Producer.class);
@@ -96,14 +96,20 @@ public class DefaultKafkaProducerFactoryTests {
 		final KafkaTemplate kafkaTemplate = new KafkaTemplate(pf);
 		KafkaTransactionManager tm = new KafkaTransactionManager(pf);
 		TransactionTemplate transactionTemplate = new TransactionTemplate(tm);
-		transactionTemplate.executeWithoutResult(s -> kafkaTemplate.send("foo", "bar"));
+		transactionTemplate.execute(s -> {
+			kafkaTemplate.send("foo", "bar");
+			return null;
+		});
 		Map<?, ?> cache = KafkaTestUtils.getPropertyValue(pf, "cache", Map.class);
 		assertThat(cache).hasSize(1);
 		Queue queue = (Queue) cache.get("foo");
 		assertThat(queue).hasSize(1);
 		assertThatExceptionOfType(CannotCreateTransactionException.class)
-				.isThrownBy(() -> transactionTemplate.executeWithoutResult(s -> {
-				}))
+				.isThrownBy(() -> {
+					transactionTemplate.execute(s -> {
+						return null;
+					});
+				})
 				.withStackTraceContaining("Invalid transition");
 
 		assertThat(queue).hasSize(0);
@@ -119,7 +125,7 @@ public class DefaultKafkaProducerFactoryTests {
 		pf.destroy();
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void testMaxCacheProducerClosedAfterBadTransition() {
 		final Producer producer = mock(Producer.class);
@@ -171,7 +177,10 @@ public class DefaultKafkaProducerFactoryTests {
 		final KafkaTemplate kafkaTemplate = new KafkaTemplate(pf);
 		KafkaTransactionManager tm = new KafkaTransactionManager(pf);
 		TransactionTemplate transactionTemplate = new TransactionTemplate(tm);
-		transactionTemplate.executeWithoutResult(s -> kafkaTemplate.send("foo", "bar"));
+		transactionTemplate.execute(s -> {
+			kafkaTemplate.send("foo", "bar");
+			return null;
+		});
 		Map<?, ?> cache = KafkaTestUtils.getPropertyValue(pf, "cache", Map.class);
 		assertThat(cache).hasSize(1);
 		Queue queue = (Queue) cache.get("foo");
@@ -182,14 +191,12 @@ public class DefaultKafkaProducerFactoryTests {
 		assertThat(suffixQueue).hasSize(1);
 
 		assertThatExceptionOfType(CannotCreateTransactionException.class)
-				.isThrownBy(() -> transactionTemplate.executeWithoutResult(s -> {
-				}));
+				.isThrownBy(() -> transactionTemplate.execute(s -> null));
 		assertThat(queue).hasSize(0);
 		assertThat(suffixQueue).hasSize(2);
 
 		assertThatExceptionOfType(KafkaException.class)
-				.isThrownBy(() -> transactionTemplate.executeWithoutResult(s -> {
-				}))
+				.isThrownBy(() -> transactionTemplate.execute(s -> null))
 				.withStackTraceContaining("Invalid commit transition");
 		assertThat(queue).hasSize(0);
 		assertThat(suffixQueue).hasSize(2);
@@ -205,9 +212,7 @@ public class DefaultKafkaProducerFactoryTests {
 		assertThat(suffixQueue).hasSize(2);
 
 		assertThatExceptionOfType(CannotCreateTransactionException.class)
-				.isThrownBy(() -> transactionTemplate.executeWithoutResult(s -> {
-
-				}))
+				.isThrownBy(() -> transactionTemplate.execute(s -> null))
 				.withStackTraceContaining("Could not create Kafka transaction");
 		assertThat(queue).hasSize(0);
 		assertThat(suffixQueue).hasSize(2);
@@ -234,7 +239,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testResetSingle() throws InterruptedException {
 		final Producer producer = mock(Producer.class);
 		DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(new HashMap<>()) {
@@ -263,7 +268,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void singleLifecycle() throws InterruptedException {
 		final Producer producer = mock(Producer.class);
 		DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(new HashMap<>()) {
@@ -292,7 +297,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testResetTx() throws Exception {
 		final Producer producer = mock(Producer.class);
 		ApplicationContext ctx = mock(ApplicationContext.class);
@@ -336,7 +341,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void txLifecycle() throws Exception {
 		final Producer producer = mock(Producer.class);
 		ApplicationContext ctx = mock(ApplicationContext.class);
@@ -372,7 +377,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void dontReturnToCacheAfterReset() {
 		final Producer producer = mock(Producer.class);
 		ApplicationContext ctx = mock(ApplicationContext.class);
@@ -416,7 +421,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testThreadLocal() throws InterruptedException {
 		final Producer producer = mock(Producer.class);
 		AtomicBoolean created = new AtomicBoolean();
@@ -452,7 +457,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void threadLocalLifecycle() {
 		final Producer producer = mock(Producer.class);
 		AtomicBoolean created = new AtomicBoolean();
@@ -479,7 +484,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testThreadLocalReset() {
 		Producer producer1 = mock(Producer.class);
 		Producer producer2 = mock(Producer.class);
@@ -508,7 +513,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testUnknownProducerIdException() {
 		final Producer producer1 = mock(Producer.class);
 		willAnswer(inv -> {
@@ -530,8 +535,7 @@ public class DefaultKafkaProducerFactoryTests {
 		assertThat(aProducer).isNotNull();
 		Producer bProducer = pf.createProducer();
 		assertThat(bProducer).isSameAs(aProducer);
-		aProducer.send(null, (meta, ex) -> {
-		});
+		aProducer.send(null, (meta, ex) -> { });
 		aProducer.close(ProducerFactoryUtils.DEFAULT_CLOSE_TIMEOUT);
 		bProducer = pf.createProducer();
 		verify(producer1).close(any(Duration.class));
@@ -539,7 +543,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testNoProducerException() {
 		final Producer producer = mock(Producer.class);
 		DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(new HashMap<>()) {
@@ -562,7 +566,7 @@ public class DefaultKafkaProducerFactoryTests {
 		assertThatExceptionOfType(NoProducerAvailableException.class).isThrownBy(() -> pf.createProducer());
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void listener() {
 		Producer producer = mock(Producer.class);
@@ -648,7 +652,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testBootstrapSupplier() {
 		final Producer producer = mock(Producer.class);
 		final Map<String, Object> configPassedToKafkaConsumer = new HashMap<>();
@@ -673,7 +677,7 @@ public class DefaultKafkaProducerFactoryTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void testTransactionId() throws InterruptedException {
 		final Producer producer = mock(Producer.class);
 		final Map<String, Object> configPassedToKafkaConsumer = new HashMap<>();
@@ -702,7 +706,7 @@ public class DefaultKafkaProducerFactoryTests {
 		assertThat(configPassedToKafkaConsumer.get(ProducerConfig.TRANSACTIONAL_ID_CONFIG)).isEqualTo("tx.1");
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void configUpdates() {
 		Map<String, Object> configs = new HashMap<>();
@@ -756,7 +760,6 @@ public class DefaultKafkaProducerFactoryTests {
 		final Map<String, Object> producerFactoryConfigs = Map.of("linger.ms", 100);
 		final Map<String, Object> producerConfigs = new HashMap<>();
 		final DefaultKafkaProducerFactory<String, String> pf = new DefaultKafkaProducerFactory<>(producerFactoryConfigs) {
-
 			@Override
 			protected Map<String, Object> getTxProducerConfigs(String transactionId) {
 				final Map<String, Object> newProducerConfigs = super.getTxProducerConfigs(transactionId);

@@ -65,7 +65,7 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.CompositeProducerInterceptor;
 import org.springframework.kafka.support.CompositeProducerListener;
-import org.springframework.kafka.support.JsonKafkaHeaderMapper;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.KafkaUtils;
 import org.springframework.kafka.support.ProducerListener;
@@ -136,7 +136,7 @@ public class KafkaTemplateTests {
 	public static void setUp() {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
 		Map<String, Object> consumerProps = KafkaTestUtils
-				.consumerProps(embeddedKafka, "KafkaTemplatetests" + UUID.randomUUID(), false);
+				.consumerProps("KafkaTemplatetests" + UUID.randomUUID(), "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, INT_KEY_TOPIC);
@@ -165,7 +165,7 @@ public class KafkaTemplateTests {
 		template.setDefaultTopic(INT_KEY_TOPIC);
 
 		template.setConsumerFactory(
-				new DefaultKafkaConsumerFactory<>(KafkaTestUtils.consumerProps(embeddedKafka, "xx", false)));
+				new DefaultKafkaConsumerFactory<>(KafkaTestUtils.consumerProps("xx", "false", embeddedKafka)));
 		ConsumerRecords<Integer, String> initialRecords =
 				template.receive(Collections.singleton(new TopicPartitionOffset(INT_KEY_TOPIC, 1, 1L)));
 		assertThat(initialRecords).isEmpty();
@@ -284,7 +284,7 @@ public class KafkaTemplateTests {
 		assertThat(new String(next.value())).isEqualTo("bar");
 		assertThat(iterator.hasNext()).isTrue();
 		next = iterator.next();
-		assertThat(next.key()).isEqualTo(JsonKafkaHeaderMapper.JSON_TYPES);
+		assertThat(next.key()).isEqualTo(DefaultKafkaHeaderMapper.JSON_TYPES);
 		assertThat(iterator.hasNext()).as("Expected no more headers").isFalse();
 
 		Message<String> message2 = MessageBuilder.withPayload("foo-message-2")
@@ -475,7 +475,7 @@ public class KafkaTemplateTests {
 		pf.setKeySerializer(new StringSerializer());
 		KafkaTemplate<String, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic(STRING_KEY_TOPIC);
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "testTString", false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testTString", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		cf.setKeyDeserializer(new StringDeserializer());
 		Consumer<String, String> localConsumer = cf.createConsumer();
@@ -630,7 +630,7 @@ public class KafkaTemplateTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 
 		template.setConsumerFactory(
-				new DefaultKafkaConsumerFactory<>(KafkaTestUtils.consumerProps(embeddedKafka, "xx", false)));
+				new DefaultKafkaConsumerFactory<>(KafkaTestUtils.consumerProps("xx", "false", embeddedKafka)));
 		TopicPartitionOffset tpoWithNullOffset = new TopicPartitionOffset(INT_KEY_TOPIC, 1, offset);
 
 		assertThatExceptionOfType(KafkaException.class)

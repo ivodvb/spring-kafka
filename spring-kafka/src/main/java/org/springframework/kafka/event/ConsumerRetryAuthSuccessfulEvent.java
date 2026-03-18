@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 /**
  * An event published when authentication or authorization has been retried successfully.
  *
@@ -27,7 +25,6 @@ import java.io.Serial;
  */
 public class ConsumerRetryAuthSuccessfulEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

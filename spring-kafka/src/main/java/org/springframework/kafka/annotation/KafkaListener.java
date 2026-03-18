@@ -338,14 +338,4 @@ public @interface KafkaListener {
 	 * @since 3.1
 	 */
 	String containerPostProcessor() default "";
-
-	/**
-	 * Override the container factory's default {@code ackMode} for this listener.
-	 * <p>
-	 * Supports SpEL {@code #{...}} and property placeholders {@code ${...}}.
-	 * @return the ack mode (case-insensitive), or empty string to use factory default.
-	 * @since 4.1
-	 * @see org.springframework.kafka.listener.ContainerProperties.AckMode
-	 */
-	String ackMode() default "";
 }

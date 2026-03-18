@@ -16,7 +16,7 @@
 
 package org.springframework.kafka.listener;
 
-import org.jspecify.annotations.Nullable;
+import org.springframework.lang.Nullable;
 
 /**
  * Metadata associated to a {@link org.springframework.kafka.annotation.KafkaListener}.

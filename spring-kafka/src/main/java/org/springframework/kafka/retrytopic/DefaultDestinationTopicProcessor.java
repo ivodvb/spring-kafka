@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.jspecify.annotations.Nullable;
-
 /**
  *
  * Default implementation of the {@link DestinationTopicProcessor} interface.
@@ -46,11 +44,12 @@ public class DefaultDestinationTopicProcessor implements DestinationTopicProcess
 												Context context) {
 		context
 				.properties
+				.stream()
 				.forEach(destinationPropertiesProcessor);
 	}
 
 	@Override
-	public void registerDestinationTopic(String mainTopicName, @Nullable String destinationTopicName,
+	public void registerDestinationTopic(String mainTopicName, String destinationTopicName,
 										DestinationTopic.Properties destinationTopicProperties, Context context) {
 		List<DestinationTopic> topicDestinations = context.destinationsByTopicMap
 				.computeIfAbsent(mainTopicName, newTopic -> new ArrayList<>());

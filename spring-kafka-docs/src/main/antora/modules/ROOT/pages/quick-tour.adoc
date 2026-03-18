@@ -25,11 +25,11 @@ Gradle::
 +
 [source,groovy,subs="+attributes",role="secondary"]
 ----
-implementation 'org.springframework.kafka:spring-kafka:{project-version}'
+compile 'org.springframework.kafka:spring-kafka:{project-version}'
 ----
 ======
 
-IMPORTANT: When using Spring Boot, (and you haven't used start.spring.io to create your project), use the `spring-boot-starter-kafka` dependency and omit the version; Boot will automatically bring in the correct version that is compatible with your Boot version:
+IMPORTANT: When using Spring Boot, (and you haven't used start.spring.io to create your project), omit the version and Boot will automatically bring in the correct version that is compatible with your Boot version:
 
 [tabs]
 ======
@@ -38,8 +38,8 @@ Maven::
 [source,xml,subs="+attributes",role="primary"]
 ----
 <dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-kafka</artifactId>
+  <groupId>org.springframework.kafka</groupId>
+  <artifactId>spring-kafka</artifactId>
 </dependency>
 ----
 
@@ -47,7 +47,7 @@ Gradle::
 +
 [source,groovy,subs="+attributes",role="secondary"]
 ----
-implementation 'org.springframework.boot:spring-boot-starter-kafka'
+implementation 'org.springframework.kafka:spring-kafka'
 ----
 ======
 
@@ -58,15 +58,15 @@ However, the quickest way to get started is to use https://start.spring.io[start
 
 This quick tour works with the following versions:
 
-* Apache Kafka Clients 4.0.x
-* Spring Framework 7.0.0
+* Apache Kafka Clients 3.7.x
+* Spring Framework 6.1.x
 * Minimum Java version: 17
 
 [[getting-started]]
 == Getting Started
 
 The simplest way to get started is to use https://start.spring.io[start.spring.io] (or the wizards in Spring Tool Suits and Intellij IDEA) and create a project, selecting 'Spring for Apache Kafka' as a dependency.
-Refer to the {spring-boot-url}/reference/messaging/kafka.html[Spring Boot documentation] for more information about its opinionated auto configuration of the infrastructure beans.
+Refer to the https://docs.spring.io/spring-boot/docs/current/reference/html/messaging.html#messaging.kafka[Spring Boot documentation] for more information about its opinionated auto configuration of the infrastructure beans.
 
 Here is a minimal consumer application.
 

@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -368,7 +367,7 @@ public class DefaultKafkaConsumerFactoryTests {
 		DefaultKafkaProducerFactory<Integer, String> pfTx = new DefaultKafkaProducerFactory<>(producerProps);
 		pfTx.setTransactionIdPrefix("fooTx.");
 		KafkaOperations<Integer, String> templateTx = new KafkaTemplate<>(pfTx);
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.embeddedKafka, "txCache1Group", false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("txCache1Group", "false", this.embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		AtomicReference<Consumer<Integer, String>> wrapped = new AtomicReference<>();
 		cf.addPostProcessor(consumer -> {
@@ -419,7 +418,7 @@ public class DefaultKafkaConsumerFactoryTests {
 		TransactionIdSuffixStrategy suffixStrategy = new DefaultTransactionIdSuffixStrategy(3);
 		pfTx.setTransactionIdSuffixStrategy(suffixStrategy);
 		KafkaOperations<Integer, String> templateTx = new KafkaTemplate<>(pfTx);
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.embeddedKafka, "txCache1FixedGroup", false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("txCache1FixedGroup", "false", this.embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		AtomicReference<Consumer<Integer, String>> wrapped = new AtomicReference<>();
 		cf.addPostProcessor(consumer -> {
@@ -465,7 +464,7 @@ public class DefaultKafkaConsumerFactoryTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void listener(boolean closeWithTimeout) {
-		Map<String, Object> consumerConfig = KafkaTestUtils.consumerProps(this.embeddedKafka, "txCache1Group", false);
+		Map<String, Object> consumerConfig = KafkaTestUtils.consumerProps("txCache1Group", "false", this.embeddedKafka);
 		consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, "foo-0");
 		DefaultKafkaConsumerFactory cf = new DefaultKafkaConsumerFactory(consumerConfig);
 		List<String> adds = new ArrayList<>();
@@ -491,7 +490,7 @@ public class DefaultKafkaConsumerFactoryTests {
 		assertThat(adds.get(0)).isEqualTo("cf.foo-0");
 		assertThat(removals).isEmpty();
 		if (closeWithTimeout) {
-			consumer.close(CloseOptions.timeout(Duration.ofSeconds(10)));
+			consumer.close(Duration.ofSeconds(10));
 		}
 		else {
 			consumer.close();
@@ -504,7 +503,7 @@ public class DefaultKafkaConsumerFactoryTests {
 	void configDeserializer() {
 		Deserializer key = mock(Deserializer.class);
 		Deserializer value = mock(Deserializer.class);
-		Map<String, Object> config = KafkaTestUtils.consumerProps(this.embeddedKafka, "mockGroup", false);
+		Map<String, Object> config = KafkaTestUtils.consumerProps("mockGroup", "false", this.embeddedKafka);
 		DefaultKafkaConsumerFactory cf = new DefaultKafkaConsumerFactory(config, key, value);
 		Deserializer keyDeserializer = cf.getKeyDeserializer();
 		assertThat(keyDeserializer).isSameAs(key);

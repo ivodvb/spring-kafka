@@ -5,7 +5,7 @@ The `@KafkaListener` annotation is used to designate a bean method as a listener
 The bean is wrapped in a `MessagingMessageListenerAdapter` configured with various features, such as converters to convert the data, if necessary, to match the method parameters.
 
 You can configure most attributes on the annotation with SpEL by using `#{...}` or property placeholders (`${...}`).
-See the javadoc:org.springframework.kafka.annotation.KafkaListener[Javadoc] for more information.
+See the https://docs.spring.io/spring-kafka/api/org/springframework/kafka/annotation/KafkaListener.html[Javadoc] for more information.
 
 [[record-listener]]
 == Record Listeners
@@ -80,37 +80,10 @@ public void listen(String data) {
 }
 ----
 
-[[topic-partition-assignment]]
-== Topic Partition Assignment
+[[manual-assignment]]
+== Explicit Partition Assignment
 
-You can configure the topic for `@KafkaListener` in three ways.
-You must configure the topic in one of these ways.
-[source, java]
-----
-@KafkaListener(id = "myListener", topics = "myTopic")
-public void listen(String data) {
-    ...
-}
-
-@KafkaListener(id = "myListener", topicPattern = "my.*")
-public void listen(String data) {
-    ...
-}
-
-@KafkaListener(id = "myListener", topicPartitions = { @TopicPartition(topic = "myTopic", partitions = { "0", "1" })})
-public void listen(String data) {
-    ...
-}
-----
-
-
-You can simply configure the topic directly by name.
-In this case, you can also configure the multiple topics like `topics = {"myTopic1", myTopic2"}`.
-
-You can also configure topics using topicPattern, which enables topic subscription based on a regular expression.
-
-When you configure topics using either of these ways (topic or topic pattern), Kafka automatically assigns partitions according to the consumer group.
-Alternatively, you can configure POJO listeners with explicit topics and partitions (and, optionally, their initial offsets).
+You can also configure POJO listeners with explicit topics and partitions (and, optionally, their initial offsets).
 The following example shows how to do so:
 
 [source, java]
@@ -216,21 +189,6 @@ public void listen(String data, Acknowledgment ack) {
 }
 ----
 
-Starting with version 4.1, you can override the container factory's default `AckMode` directly on the `@KafkaListener` annotation using the `ackMode` attribute:
-
-[source, java]
-----
-@KafkaListener(id = "manual", topics = "myTopic", ackMode = "MANUAL")
-public void listen(String data, Acknowledgment ack) {
-    ...
-    ack.acknowledge();
-}
-----
-
-The `ackMode` attribute accepts string values corresponding to `ContainerProperties.AckMode` enum values.
-This eliminates the need to create separate container factories solely for different acknowledgment modes.
-The attribute can also be configured as SpEL expression (`#{...}`) or property placeholders (`${...}`).
-
 [[consumer-record-metadata]]
 == Consumer Record Metadata
 
@@ -251,7 +209,7 @@ The following example shows how to use the headers:
 
 [source, java]
 ----
-@KafkaListener(id = "qux", topics = "myTopic1")
+@KafkaListener(id = "qux", topicPattern = "myTopic1")
 public void listen(@Payload String foo,
         @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) Integer key,
         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,

@@ -17,9 +17,9 @@
 package org.springframework.kafka.support.serializer;
 
 import org.apache.kafka.common.header.Headers;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.KafkaException;
+import org.springframework.lang.Nullable;
 
 /**
  * Exception returned in the consumer record value or key when a deserialization failure

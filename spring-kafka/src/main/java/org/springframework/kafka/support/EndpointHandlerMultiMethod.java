@@ -19,8 +19,6 @@ package org.springframework.kafka.support;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-
 /**
  * Handler multi method for retrying endpoints.
  *
@@ -31,7 +29,6 @@ import org.jspecify.annotations.Nullable;
  */
 public class EndpointHandlerMultiMethod extends EndpointHandlerMethod {
 
-	@Nullable
 	private Method defaultMethod;
 
 	private List<Method> methods;
@@ -42,7 +39,7 @@ public class EndpointHandlerMultiMethod extends EndpointHandlerMethod {
 	 * @param defaultMethod the defaultMethod.
 	 * @param methods the methods.
 	 */
-	public EndpointHandlerMultiMethod(Object bean, @Nullable Method defaultMethod, List<Method> methods) {
+	public EndpointHandlerMultiMethod(Object bean, Method defaultMethod, List<Method> methods) {
 		super(bean);
 		this.defaultMethod = defaultMethod;
 		this.methods = methods;
@@ -68,7 +65,7 @@ public class EndpointHandlerMultiMethod extends EndpointHandlerMethod {
 	 * Return the default method.
 	 * @return the default method.
 	 */
-	public @Nullable Method getDefaultMethod() {
+	public Method getDefaultMethod() {
 		return this.defaultMethod;
 	}
 

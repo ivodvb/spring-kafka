@@ -23,7 +23,8 @@ import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * The strategy to produce a {@link Consumer} instance.
@@ -242,7 +243,7 @@ public interface ConsumerFactory<K, V> {
 		 * period).
 		 * @param consumer the consumer.
 		 */
-		default void consumerRemoved(@Nullable String id, Consumer<K, V> consumer) {
+		default void consumerRemoved(String id, Consumer<K, V> consumer) {
 		}
 
 	}

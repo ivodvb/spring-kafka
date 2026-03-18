@@ -63,6 +63,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
@@ -192,9 +193,9 @@ public class SubBatchPerPartitionTxRollbackTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					case 1:
-						return new ConsumerRecords(records2, Map.of());
+						return new ConsumerRecords(records2);
 					default:
 						try {
 							Thread.sleep(100);
@@ -202,14 +203,14 @@ public class SubBatchPerPartitionTxRollbackTests {
 						catch (@SuppressWarnings("unused") InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
 			willAnswer(i -> {
 				this.closeLatch.countDown();
 				return null;
 			}).given(consumer).close();
-			given(consumer.groupMetadata()).willReturn(mock(ConsumerGroupMetadata.class));
+			willReturn(new ConsumerGroupMetadata(CONTAINER_ID)).given(consumer).groupMetadata();
 			return consumer;
 		}
 

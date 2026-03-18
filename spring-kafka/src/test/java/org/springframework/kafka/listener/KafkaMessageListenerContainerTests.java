@@ -64,8 +64,6 @@ import org.apache.kafka.common.errors.TopicAuthorizationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -103,14 +101,16 @@ import org.springframework.kafka.support.LogIfLevelEnabled.Level;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.TopicPartitionOffset.SeekPosition;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -222,7 +222,7 @@ public class KafkaMessageListenerContainerTests {
 
 	@Test
 	public void testDelegateType() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "delegate", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("delegate", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic3);
 		containerProps.setShutdownTimeout(60_000L);
@@ -308,7 +308,7 @@ public class KafkaMessageListenerContainerTests {
 
 	@Test
 	public void testNoResetPolicy() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "delegate", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("delegate", "false", embeddedKafka);
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "none");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic17);
@@ -334,7 +334,7 @@ public class KafkaMessageListenerContainerTests {
 
 	@Test
 	public void testListenerTypes() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "lt1", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("lt1", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic4);
 
@@ -475,7 +475,7 @@ public class KafkaMessageListenerContainerTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testCommitsAreFlushedOnStop() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "flushedOnStop", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("flushedOnStop", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = spy(new DefaultKafkaConsumerFactory<>(props));
 		AtomicReference<Consumer<Integer, String>> consumer = new AtomicReference<>();
 		willAnswer(inv -> {
@@ -526,7 +526,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testRecordAck() throws Exception {
 		logger.info("Start record ack");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test6", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test6", "false", embeddedKafka);
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic6);
@@ -595,7 +595,7 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -669,7 +669,7 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar"),
 				new ConsumerRecord<>("foo", 0, 2L, 1, "baz"),
 				new ConsumerRecord<>("foo", 0, 3L, 1, "qux")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -738,7 +738,7 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 2L, 1, "bar"),
 				new ConsumerRecord<>("foo", 0, 4L, 1, "baz"),
 				new ConsumerRecord<>("foo", 0, 6L, 1, "qux")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -808,7 +808,7 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 2L, 1, "bar"),
 				new ConsumerRecord<>("foo", 0, 4L, 1, "baz"),
 				new ConsumerRecord<>("foo", 0, 6L, 1, "qux")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -879,7 +879,7 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 2L, 1, "baz"),
 				new ConsumerRecord<>("foo", 0, 3L, 1, "qux"),
 				new ConsumerRecord<>("foo", 0, 4L, 1, "quz")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -957,12 +957,12 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar"),
 				new ConsumerRecord<>("foo", 0, 2L, 1, "baz"),
 				new ConsumerRecord<>("foo", 0, 3L, 1, "qux")));
-		ConsumerRecords<Integer, String> consumerRecords1 = new ConsumerRecords<>(records1, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords1 = new ConsumerRecords<>(records1);
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records2 = new HashMap<>();
 		records2.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 4L, 1, "fiz")));
-		ConsumerRecords<Integer, String> consumerRecords2 = new ConsumerRecords<>(records2, Map.of());
-		ConsumerRecords<Integer, String> empty = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords2 = new ConsumerRecords<>(records2);
+		ConsumerRecords<Integer, String> empty = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean paused = new AtomicBoolean();
 		AtomicBoolean polledWhilePaused = new AtomicBoolean();
 		AtomicReference<Collection<TopicPartition>> pausedParts = new AtomicReference<>(Collections.emptySet());
@@ -1084,7 +1084,7 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -1148,7 +1148,7 @@ public class KafkaMessageListenerContainerTests {
 		final Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -1212,7 +1212,7 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		long sleepFor = ackMode.equals(AckMode.MANUAL_IMMEDIATE) ? 20_000 : 50;
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
@@ -1328,7 +1328,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerFactory<Integer, String> cf = mock(ConsumerFactory.class);
 		Consumer<Integer, String> consumer = mock(Consumer.class);
 		given(cf.createConsumer(isNull(), eq(""), isNull(), any())).willReturn(consumer);
-		ConsumerRecords records = new ConsumerRecords(Collections.emptyMap(), Map.of());
+		ConsumerRecords records = new ConsumerRecords(Collections.emptyMap());
 		CountDownLatch latch = new CountDownLatch(20);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(100);
@@ -1361,7 +1361,7 @@ public class KafkaMessageListenerContainerTests {
 	public void testBatchAck() throws Exception {
 		logger.info("Start batch ack");
 
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test6", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test6", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic7);
 		containerProps.setMessageListener((MessageListener<Integer, String>) message -> {
@@ -1428,7 +1428,7 @@ public class KafkaMessageListenerContainerTests {
 	public void testBatchListener() throws Exception {
 		logger.info("Start batch listener");
 
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test8", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test8", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic8);
 		containerProps.setMessageListener((BatchMessageListener<Integer, String>) messages -> {
@@ -1505,7 +1505,7 @@ public class KafkaMessageListenerContainerTests {
 		template.sendDefault(1, 0, "qux");
 		template.flush();
 
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test9", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test9", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic9);
 		final CountDownLatch latch = new CountDownLatch(4);
@@ -1565,7 +1565,7 @@ public class KafkaMessageListenerContainerTests {
 	public void testBatchListenerErrors() throws Exception {
 		logger.info("Start batch listener errors");
 
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test9", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test9", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic10);
 		containerProps.setMessageListener((BatchMessageListener<Integer, String>) messages -> {
@@ -1643,7 +1643,7 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -1696,7 +1696,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testSeekBatch() throws Exception {
 		logger.info("Start seek batch seek");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test16", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test16", "true", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic16);
 		final CountDownLatch registerLatch = new CountDownLatch(1);
@@ -1750,11 +1750,11 @@ public class KafkaMessageListenerContainerTests {
 	}
 
 	private static Stream<Arguments> testSeekParameters() {
-		Map<String, Object> noAutoCommit = KafkaTestUtils.consumerProps(embeddedKafka, "test15", true);
+		Map<String, Object> noAutoCommit = KafkaTestUtils.consumerProps("test15", "true", embeddedKafka);
 		noAutoCommit.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG); // test false by default
 		return Stream.of(
-				Arguments.of(KafkaTestUtils.consumerProps(embeddedKafka, "test11", false), topic11, false),
-				Arguments.of(KafkaTestUtils.consumerProps(embeddedKafka, "test12", true), topic12, true),
+				Arguments.of(KafkaTestUtils.consumerProps("test11", "false", embeddedKafka), topic11, false),
+				Arguments.of(KafkaTestUtils.consumerProps("test12", "true", embeddedKafka), topic12, true),
 				Arguments.of(noAutoCommit, topic15, false));
 	}
 
@@ -1887,7 +1887,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testDefinedPartitions() throws Exception {
 		this.logger.info("Start defined parts");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test13", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test13", "false", embeddedKafka);
 		TopicPartitionOffset topic1Partition0 = new TopicPartitionOffset(topic13, 0, 0L);
 
 		CountDownLatch initialConsumersLatch = new CountDownLatch(2);
@@ -2198,7 +2198,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testManualAckRebalance() throws Exception {
 		logger.info("Start manual ack rebalance");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test14", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test14", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic14);
 		final List<AtomicInteger> counts = new ArrayList<>();
@@ -2290,9 +2290,9 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testJsonSerDeConfiguredType() throws Exception {
 		this.logger.info("Start JSON1");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testJson", false);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-		props.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, Foo.class);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testJson", "false", embeddedKafka);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, Foo.class);
 		DefaultKafkaConsumerFactory<Integer, Foo> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic1);
 
@@ -2312,8 +2312,8 @@ public class KafkaMessageListenerContainerTests {
 		ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-		senderProps.put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+		senderProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
 		DefaultKafkaProducerFactory<Integer, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, Foo> template = new KafkaTemplate<>(pf);
 		template.setDefaultTopic(topic1);
@@ -2330,10 +2330,10 @@ public class KafkaMessageListenerContainerTests {
 	public void testJsonSerDeWithInstanceDoesNotUseConfiguration() throws Exception {
 		this.logger.info("Start JSON1a");
 		Class<Foo1> consumerConfigValueDefaultType = Foo1.class;
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testJson", false);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-		props.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, consumerConfigValueDefaultType);
-		DefaultKafkaConsumerFactory<Integer, Foo> cf = new DefaultKafkaConsumerFactory<>(props, null, new JacksonJsonDeserializer<>(Foo.class));
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testJson", "false", embeddedKafka);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, consumerConfigValueDefaultType);
+		DefaultKafkaConsumerFactory<Integer, Foo> cf = new DefaultKafkaConsumerFactory<>(props, null, new JsonDeserializer<>(Foo.class));
 		ContainerProperties containerProps = new ContainerProperties(topic24);
 
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -2352,7 +2352,7 @@ public class KafkaMessageListenerContainerTests {
 		ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 		DefaultKafkaProducerFactory<Integer, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, Foo> template = new KafkaTemplate<>(pf);
 		template.setDefaultTopic(topic24);
@@ -2370,10 +2370,10 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testJsonSerDeHeaderSimpleType() throws Exception {
 		this.logger.info("Start JSON2");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testJson", false);
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-		props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "*");
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testJson", "false", embeddedKafka);
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 		DefaultKafkaConsumerFactory<Bar, Foo> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic2);
 
@@ -2393,8 +2393,8 @@ public class KafkaMessageListenerContainerTests {
 		ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+		senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 		DefaultKafkaProducerFactory<Bar, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Bar, Foo> template = new KafkaTemplate<>(pf);
 		template.setDefaultTopic(topic2);
@@ -2412,10 +2412,10 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testJsonSerDeTypeMappings() throws Exception {
 		this.logger.info("Start JSON3");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testJson", false);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-		props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "*");
-		props.put(JacksonJsonDeserializer.TYPE_MAPPINGS, "foo:" + Foo1.class.getName() + " , bar:" + Bar1.class.getName());
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testJson", "false", embeddedKafka);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		props.put(JsonDeserializer.TYPE_MAPPINGS, "foo:" + Foo1.class.getName() + " , bar:" + Bar1.class.getName());
 		DefaultKafkaConsumerFactory<Integer, Foo1> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic20);
 
@@ -2435,8 +2435,8 @@ public class KafkaMessageListenerContainerTests {
 		ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-		senderProps.put(JacksonJsonSerializer.TYPE_MAPPINGS, "foo:" + Foo.class.getName() + ",bar:" + Bar.class.getName());
+		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+		senderProps.put(JsonSerializer.TYPE_MAPPINGS, "foo:" + Foo.class.getName() + ",bar:" + Bar.class.getName());
 		DefaultKafkaProducerFactory<Integer, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, Foo> template = new KafkaTemplate<>(pf);
 		template.setDefaultTopic(topic20);
@@ -2453,11 +2453,11 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testJsonSerDeIgnoreTypeHeadersInbound() throws Exception {
 		this.logger.info("Start JSON4");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testJson", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testJson", "false", embeddedKafka);
 		props.put("spring.deserializer.value.delegate.class",
 				"org.apache.kafka.common.serialization.StringDeserializer");
 		ErrorHandlingDeserializer<Foo1> errorHandlingDeserializer =
-				new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(Foo1.class, false));
+				new ErrorHandlingDeserializer<>(new JsonDeserializer<>(Foo1.class, false));
 
 		DefaultKafkaConsumerFactory<Integer, Foo1> cf = new DefaultKafkaConsumerFactory<>(props,
 				new IntegerDeserializer(), errorHandlingDeserializer);
@@ -2479,7 +2479,7 @@ public class KafkaMessageListenerContainerTests {
 		ContainerTestUtils.waitForAssignment(container, embeddedKafka.getPartitionsPerTopic());
 
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+		senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 		DefaultKafkaProducerFactory<Integer, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, Foo> template = new KafkaTemplate<>(pf);
 		template.setDefaultTopic(topic21);
@@ -2495,7 +2495,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testStaticAssign() throws Exception {
 		this.logger.info("Start static");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testStatic", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testStatic", "false", embeddedKafka);
 
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(new TopicPartitionOffset(topic22, 0),
@@ -2538,7 +2538,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testPatternAssign() throws Exception {
 		this.logger.info("Start pattern");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testpattern", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testpattern", "false", embeddedKafka);
 
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(Pattern.compile(topic23 + ".*"));
@@ -2571,7 +2571,7 @@ public class KafkaMessageListenerContainerTests {
 
 	@Test
 	public void testBadListenerType() {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testStatic", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testStatic", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, Foo1> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties("foo");
 		containerProps.setMissingTopicsFatal(false);
@@ -2593,7 +2593,7 @@ public class KafkaMessageListenerContainerTests {
 
 	@Test
 	public void testBadAckMode() {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "testStatic", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("testStatic", "true", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, Foo1> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties("foo");
 		containerProps.setMissingTopicsFatal(false);
@@ -2610,7 +2610,7 @@ public class KafkaMessageListenerContainerTests {
 	@Test
 	public void testRebalanceAfterFailedRecord() throws Exception {
 		logger.info("Start rebalance after failed record");
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test18", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test18", "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic18);
 		final List<AtomicInteger> counts = new ArrayList<>();
@@ -2703,7 +2703,7 @@ public class KafkaMessageListenerContainerTests {
 	}
 
 	@Test
-	void enforceRebalanceOnTheConsumer() throws Exception {
+	void enforceRabalanceOnTheConsumer() throws Exception {
 		ConsumerFactory<Integer, String> cf = mock();
 		ContainerProperties containerProps = new ContainerProperties("enforce-rebalance-test-topic");
 		containerProps.setGroupId("grp");
@@ -2746,8 +2746,8 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 1), Arrays.asList(
 				new ConsumerRecord<>("foo", 1, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 1, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		AtomicBoolean rebalance = new AtomicBoolean(true);
 		AtomicReference<ConsumerRebalanceListener> rebal = new AtomicReference<>();
@@ -2898,7 +2898,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerFactory<Integer, String> cf = mock(ConsumerFactory.class);
 		Consumer<Integer, String> consumer = mock(Consumer.class);
 		given(cf.createConsumer(eq("grp"), eq("clientId"), isNull(), any())).willReturn(consumer);
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.assignment()).willReturn(Set.of(new TopicPartition("foo", 0), new TopicPartition("foo", 1)));
 		final CountDownLatch pauseLatch1 = new CountDownLatch(1);
@@ -3116,7 +3116,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerFactory<Integer, String> cf = mock(ConsumerFactory.class);
 		Consumer<Integer, String> consumer = mock(Consumer.class);
 		given(cf.createConsumer(eq("grp"), eq("clientId"), isNull(), any())).willReturn(consumer);
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		final CountDownLatch latch = new CountDownLatch(1);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			latch.countDown();
@@ -3182,7 +3182,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerFactory<Integer, String> cf = mock(ConsumerFactory.class);
 		Consumer<Integer, String> consumer = mock(Consumer.class);
 		given(cf.createConsumer(eq("grp"), eq("clientId"), isNull(), any())).willReturn(consumer);
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		final CountDownLatch latch = new CountDownLatch(1);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			latch.countDown();
@@ -3215,7 +3215,7 @@ public class KafkaMessageListenerContainerTests {
 		final CountDownLatch consumeFirstLatch = new CountDownLatch(1);
 		final CountDownLatch consumeLatch = new CountDownLatch(2);
 
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "test19", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("test19", "false", embeddedKafka);
 		props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 3_000);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties(topic19);
@@ -3299,10 +3299,10 @@ public class KafkaMessageListenerContainerTests {
 				new ConsumerRecord<>("foo", 0, 4L, 1, "fiz"),
 				new ConsumerRecord<>("foo", 0, 5L, 1, "buz"), // commit (3 = 3)
 				new ConsumerRecord<>("foo", 0, 6L, 1, "bif"))); // commit (1 when next poll returns no records)
-		ConsumerRecords<Integer, String> consumerRecords1 = new ConsumerRecords<>(records1, Map.of());
-		ConsumerRecords<Integer, String> consumerRecords2 = new ConsumerRecords<>(records2, Map.of());
-		ConsumerRecords<Integer, String> consumerRecords3 = new ConsumerRecords<>(records3, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords1 = new ConsumerRecords<>(records1);
+		ConsumerRecords<Integer, String> consumerRecords2 = new ConsumerRecords<>(records2);
+		ConsumerRecords<Integer, String> consumerRecords3 = new ConsumerRecords<>(records3);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicInteger which = new AtomicInteger();
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -3363,8 +3363,8 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -3581,7 +3581,7 @@ public class KafkaMessageListenerContainerTests {
 				throw new TopicAuthorizationException("test");
 			}
 			else {
-				return new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+				return new ConsumerRecords<>(Collections.emptyMap());
 			}
 		}).given(consumer).poll(any());
 
@@ -3655,7 +3655,7 @@ public class KafkaMessageListenerContainerTests {
 		TopicPartition topicPartition0 = new TopicPartition("foo", 0);
 		topics.add(topicPartition0);
 		topics.add(new TopicPartition("foo", 1));
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean rebalance = new AtomicBoolean(true);
 		AtomicReference<ConsumerRebalanceListener> rebal = new AtomicReference<>();
 		CountDownLatch latch = new CountDownLatch(1);
@@ -3742,9 +3742,9 @@ public class KafkaMessageListenerContainerTests {
 		final Map<TopicPartition, List<ConsumerRecord<Integer, String>>> additionalRecords = Collections.singletonMap(
 			new TopicPartition("foo", 1),
 				Collections.singletonList(new ConsumerRecord<>("foo", 1, 2L, 1, "foo")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> additionalConsumerRecords = new ConsumerRecords<>(additionalRecords, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> additionalConsumerRecords = new ConsumerRecords<>(additionalRecords);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicInteger pollIteration = new AtomicInteger();
 		AtomicReference<ConsumerRebalanceListener> rebal = new AtomicReference<>();
 		CountDownLatch latch = new CountDownLatch(3);
@@ -3816,8 +3816,8 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 1), Arrays.asList(
 				new ConsumerRecord<>("foo", 1, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 1, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		AtomicInteger rebalance = new AtomicInteger();
 		AtomicReference<ConsumerRebalanceListener> rebal = new AtomicReference<>();
@@ -3892,8 +3892,8 @@ public class KafkaMessageListenerContainerTests {
 		records.put(new TopicPartition("foo", 0), Arrays.asList(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 				new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -3934,8 +3934,8 @@ public class KafkaMessageListenerContainerTests {
 		final Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(
 				new ConsumerRecord<>("foo", 0, 0L, 1, "foo")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -3979,8 +3979,8 @@ public class KafkaMessageListenerContainerTests {
 		final Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records =
 				Map.of(new TopicPartition("foo", 0), Arrays.asList(new ConsumerRecord<>("foo", 0, 0L, 1, "foo"),
 						new ConsumerRecord<>("foo", 0, 1L, 1, "bar")));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
-		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
+		ConsumerRecords<Integer, String> emptyRecords = new ConsumerRecords<>(Collections.emptyMap());
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -4024,7 +4024,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("foo", 0, 1L, 1, "bar");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -4053,28 +4053,13 @@ public class KafkaMessageListenerContainerTests {
 		containerProps.setMessageListener(messageListener);
 		containerProps.setClientId("clientId");
 
-		CountDownLatch afterLatch = new CountDownLatch(2);
-		RecordInterceptor<Integer, String> recordInterceptor1 = spy(new RecordInterceptor<Integer, String>() {
+		CountDownLatch afterLatch = new CountDownLatch(1);
+		RecordInterceptor<Integer, String> recordInterceptor = spy(new RecordInterceptor<Integer, String>() {
 
 			@Override
-			public @NonNull ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
+			@NonNull
+			public ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
 					Consumer<Integer, String> consumer) {
-
-				return record;
-			}
-
-			@Override
-			public void clearThreadState(Consumer<?, ?> consumer) {
-				afterLatch.countDown();
-			}
-
-		});
-
-		RecordInterceptor<Integer, String> recordInterceptor2 = spy(new RecordInterceptor<Integer, String>() {
-
-			@Override
-			public @NonNull ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
-																	Consumer<Integer, String> consumer) {
 
 				return record;
 			}
@@ -4088,36 +4073,23 @@ public class KafkaMessageListenerContainerTests {
 
 		KafkaMessageListenerContainer<Integer, String> container =
 				new KafkaMessageListenerContainer<>(cf, containerProps);
-		container.setRecordInterceptor(new CompositeRecordInterceptor<>());
-		if (container.getRecordInterceptor() instanceof CompositeRecordInterceptor<Integer, String> composite) {
-			composite.addRecordInterceptor(recordInterceptor1);
-			composite.addRecordInterceptor(recordInterceptor2);
-		}
-
+		container.setRecordInterceptor(recordInterceptor);
 		container.start();
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(afterLatch.await(10, TimeUnit.SECONDS)).isTrue();
 
-		InOrder inOrder = inOrder(recordInterceptor1, recordInterceptor2, messageListener, consumer);
-		inOrder.verify(recordInterceptor1).setupThreadState(eq(consumer));
-		inOrder.verify(recordInterceptor2).setupThreadState(eq(consumer));
+		InOrder inOrder = inOrder(recordInterceptor, messageListener, consumer);
+		inOrder.verify(recordInterceptor).setupThreadState(eq(consumer));
 		inOrder.verify(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
-		inOrder.verify(recordInterceptor1).intercept(eq(firstRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).intercept(eq(firstRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).intercept(eq(firstRecord), eq(consumer));
 		inOrder.verify(messageListener).onMessage(eq(firstRecord));
-		inOrder.verify(recordInterceptor1).success(eq(firstRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).success(eq(firstRecord), eq(consumer));
-		inOrder.verify(recordInterceptor1).afterRecord(eq(firstRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).afterRecord(eq(firstRecord), eq(consumer));
-		inOrder.verify(recordInterceptor1).intercept(eq(secondRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).intercept(eq(secondRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).success(eq(firstRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).afterRecord(eq(firstRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).intercept(eq(secondRecord), eq(consumer));
 		inOrder.verify(messageListener).onMessage(eq(secondRecord));
-		inOrder.verify(recordInterceptor1).success(eq(secondRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).success(eq(secondRecord), eq(consumer));
-		inOrder.verify(recordInterceptor1).afterRecord(eq(secondRecord), eq(consumer));
-		inOrder.verify(recordInterceptor2).afterRecord(eq(secondRecord), eq(consumer));
-		inOrder.verify(recordInterceptor1).clearThreadState(eq(consumer));
-		inOrder.verify(recordInterceptor2).clearThreadState(eq(consumer));
+		inOrder.verify(recordInterceptor).success(eq(secondRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).afterRecord(eq(secondRecord), eq(consumer));
+		inOrder.verify(recordInterceptor).clearThreadState(eq(consumer));
 		container.stop();
 	}
 
@@ -4140,7 +4112,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("foo", 0, 1L, 1, "bar");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -4174,7 +4146,8 @@ public class KafkaMessageListenerContainerTests {
 		RecordInterceptor<Integer, String> recordInterceptor = spy(new RecordInterceptor<Integer, String>() {
 
 			@Override
-			public @Nullable ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
+			@Nullable
+			public ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
 					Consumer<Integer, String> consumer) {
 
 				return null;
@@ -4235,7 +4208,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("foo", 0, 1L, 1, "bar");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		AtomicBoolean first = new AtomicBoolean(true);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
@@ -4263,7 +4236,8 @@ public class KafkaMessageListenerContainerTests {
 		BatchInterceptor<Integer, String> interceptor = spy(new BatchInterceptor<Integer, String>() {
 
 			@Override
-			public @Nullable ConsumerRecords<Integer, String> intercept(ConsumerRecords<Integer, String> records,
+			@Nullable
+			public ConsumerRecords<Integer, String> intercept(ConsumerRecords<Integer, String> records,
 					Consumer<Integer, String> consumer) {
 
 				return null;
@@ -4296,7 +4270,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> record = new ConsumerRecord<>("foo", 0, 0L, 1, "foo");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(record));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -4328,7 +4302,8 @@ public class KafkaMessageListenerContainerTests {
 		RecordInterceptor<Integer, String> recordInterceptor = spy(new RecordInterceptor<Integer, String>() {
 
 			@Override
-			public @NonNull ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
+			@NonNull
+			public ConsumerRecord<Integer, String> intercept(ConsumerRecord<Integer, String> record,
 					Consumer<Integer, String> consumer) {
 
 				return record;
@@ -4369,7 +4344,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("foo", 0, 1L, 1, "bar");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -4440,7 +4415,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("foo", 0, 1L, 1, "bar");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("foo", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			Thread.sleep(50);
 			return consumerRecords;
@@ -4511,7 +4486,7 @@ public class KafkaMessageListenerContainerTests {
 		ConsumerRecord<Integer, String> secondRecord = new ConsumerRecord<>("test-topic", 0, 1L, 1, "data-2");
 		Map<TopicPartition, List<ConsumerRecord<Integer, String>>> records = new HashMap<>();
 		records.put(new TopicPartition("test-topic", 0), List.of(firstRecord, secondRecord));
-		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records, Map.of());
+		ConsumerRecords<Integer, String> consumerRecords = new ConsumerRecords<>(records);
 		AtomicInteger invocation = new AtomicInteger(0);
 		given(consumer.poll(any(Duration.class))).willAnswer(i -> {
 			if (invocation.getAndIncrement() == 0) {
@@ -4519,20 +4494,20 @@ public class KafkaMessageListenerContainerTests {
 			}
 			else {
 				// Subsequent polls after the first one returns empty records.
-				return new ConsumerRecords<Integer, String>(Map.of(), Map.of());
+				return new ConsumerRecords<Integer, String>(Map.of());
 			}
 		});
 		TopicPartitionOffset[] topicPartition = new TopicPartitionOffset[] {
 				new TopicPartitionOffset("test-topic", 0) };
 
-		AtomicInteger attempts = new AtomicInteger(3); // 3 failures, 1 success
-		// Cannot be lambda: Mockito doesn't mock final classes
+		CountDownLatch latch = new CountDownLatch(4); // 3 failures, 1 success
 		BatchMessageListener<Integer, String> batchMessageListener = spy(
 				new BatchMessageListener<Integer, String>() { // Cannot be lambda: Mockito doesn't mock final classes
 
 					@Override
 					public void onMessage(List<ConsumerRecord<Integer, String>> data) {
-						if (attempts.getAndDecrement() > 0) {
+						latch.countDown();
+						if (latch.getCount() > 0) {
 							throw new IllegalArgumentException("Failed record");
 						}
 					}
@@ -4546,19 +4521,12 @@ public class KafkaMessageListenerContainerTests {
 		containerProps.setMessageListener(batchMessageListener);
 		containerProps.setClientId("clientId");
 
-		CountDownLatch successLatch = new CountDownLatch(1);
-
 		BatchInterceptor<Integer, String> batchInterceptor = spy(new BatchInterceptor<Integer, String>() {
 
 			@Override
 			public ConsumerRecords<Integer, String> intercept(ConsumerRecords<Integer, String> records,
 															Consumer<Integer, String> consumer) {
 				return records;
-			}
-
-			@Override
-			public void success(ConsumerRecords<Integer, String> records, Consumer<Integer, String> consumer) {
-				successLatch.countDown();
 			}
 
 		});
@@ -4568,8 +4536,7 @@ public class KafkaMessageListenerContainerTests {
 		container.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0, 3)));
 		container.setBatchInterceptor(batchInterceptor);
 		container.start();
-
-		assertThat(successLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 
 		InOrder inOrder = inOrder(batchInterceptor, batchMessageListener, consumer);
 		for (int i = 0; i < 3; i++) {
@@ -4604,7 +4571,7 @@ public class KafkaMessageListenerContainerTests {
 				Map.of(
 						new TopicPartition("foo", 0),
 						Collections.singletonList(new ConsumerRecord<>("foo", 0, 0L, 1, "foo"))
-				), Map.of()
+				)
 		));
 		final ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> offsetsCaptor = ArgumentCaptor.forClass(Map.class);
 		final CountDownLatch latch = new CountDownLatch(1);

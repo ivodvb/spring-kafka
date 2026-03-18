@@ -213,7 +213,7 @@ public class PauseContainerWhileErrorHandlerIsRetryingTests {
 		@Bean
 		ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
 			DefaultKafkaConsumerFactory consumerFactory = new DefaultKafkaConsumerFactory(
-					KafkaTestUtils.consumerProps(embeddedKafkaBroker, "grp", false)
+					KafkaTestUtils.consumerProps("grp", "false", embeddedKafkaBroker)
 			);
 			ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory();
 			factory.setBatchListener(true);

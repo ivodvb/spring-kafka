@@ -27,11 +27,11 @@ import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Gary Russell
- * @author Ngoc Nhan
  * @since 2.2
  *
  */
@@ -47,7 +47,7 @@ public class MissingTopicsTests {
 
 	@Test
 	public void testMissingTopicCMLC() {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "missing1", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("missing1", "true", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties("notexisting");
 		containerProps.setMessageListener((MessageListener<Integer, String>) message -> { });
@@ -55,13 +55,19 @@ public class MissingTopicsTests {
 		ConcurrentMessageListenerContainer<Integer, String> container =
 				new ConcurrentMessageListenerContainer<>(cf, containerProps);
 		container.setBeanName("testMissing1");
-		assertThatIllegalStateException().isThrownBy(container::start)
-				.withMessageContaining("missingTopicsFatal");
+
+		try {
+			container.start();
+			fail("Expected exception");
+		}
+		catch (IllegalStateException e) {
+			assertThat(e.getMessage()).contains("missingTopicsFatal");
+		}
 	}
 
 	@Test
 	public void testMissingTopicKMLC() {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "missing2", true);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("missing2", "true", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props);
 		ContainerProperties containerProps = new ContainerProperties("notexisting");
 		containerProps.setMessageListener((MessageListener<Integer, String>) message -> { });
@@ -69,8 +75,13 @@ public class MissingTopicsTests {
 		KafkaMessageListenerContainer<Integer, String> container =
 				new KafkaMessageListenerContainer<>(cf, containerProps);
 		container.setBeanName("testMissing2");
-		assertThatIllegalStateException().isThrownBy(container::start)
-				.withMessageContaining("missingTopicsFatal");
+		try {
+			container.start();
+			fail("Expected exception");
+		}
+		catch (IllegalStateException e) {
+			assertThat(e.getMessage()).contains("missingTopicsFatal");
+		}
 		container.getContainerProperties().setMissingTopicsFatal(false);
 		container.start();
 		container.stop();

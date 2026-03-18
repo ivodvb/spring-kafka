@@ -16,7 +16,7 @@
 
 package org.springframework.kafka.listener;
 
-import org.jspecify.annotations.Nullable;
+import org.springframework.lang.Nullable;
 
 /**
  * Default {@link BackOffHandler}; suspends the thread for the back off. If a container is
@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 public class DefaultBackOffHandler implements BackOffHandler {
 
 	@Override
-	public void onNextBackOff(@Nullable MessageListenerContainer container, @Nullable Exception exception, long nextBackOff) {
+	public void onNextBackOff(@Nullable MessageListenerContainer container, Exception exception, long nextBackOff) {
 		try {
 			if (container == null) {
 				Thread.sleep(nextBackOff);

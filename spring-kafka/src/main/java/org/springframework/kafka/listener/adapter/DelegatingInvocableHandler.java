@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.beans.factory.config.BeanExpressionResolver;
@@ -38,6 +36,7 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.support.KafkaUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
@@ -56,7 +55,6 @@ import org.springframework.validation.Validator;
  *
  * @author Gary Russell
  * @author Wang Zhiyang
- * @author Ivan Malutin
  *
  */
 public class DelegatingInvocableHandler {
@@ -70,7 +68,7 @@ public class DelegatingInvocableHandler {
 	private final ConcurrentMap<InvocableHandlerMethod, MethodParameter> payloadMethodParameters =
 			new ConcurrentHashMap<>();
 
-	private final @Nullable InvocableHandlerMethod defaultHandler;
+	private final InvocableHandlerMethod defaultHandler;
 
 	private final Map<InvocableHandlerMethod, Expression> handlerSendTo = new ConcurrentHashMap<>();
 
@@ -80,13 +78,13 @@ public class DelegatingInvocableHandler {
 
 	private final Object bean;
 
-	private final @Nullable BeanExpressionResolver resolver;
+	private final BeanExpressionResolver resolver;
 
-	private final @Nullable BeanExpressionContext beanExpressionContext;
+	private final BeanExpressionContext beanExpressionContext;
 
-	private final @Nullable ConfigurableListableBeanFactory beanFactory;
+	private final ConfigurableListableBeanFactory beanFactory;
 
-	private final @Nullable PayloadValidator validator;
+	private final PayloadValidator validator;
 
 	private final boolean asyncReplies;
 
@@ -169,8 +167,7 @@ public class DelegatingInvocableHandler {
 	 * @throws Exception raised if no suitable argument resolver can be found,
 	 * or the method raised an exception.
 	 */
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
-	public Object invoke(Message<?> message, @Nullable Object... providedArgs) throws Exception { //NOSONAR
+	public Object invoke(Message<?> message, Object... providedArgs) throws Exception { //NOSONAR
 		Class<?> payloadClass = message.getPayload().getClass();
 		InvocableHandlerMethod handler = getHandlerForPayload(payloadClass);
 		if (this.validator != null && this.defaultHandler != null) {
@@ -189,13 +186,8 @@ public class DelegatingInvocableHandler {
 		else {
 			result = handler.invoke(message, providedArgs);
 		}
-		if (result != null) {
-			Expression replyTo = this.handlerSendTo.get(handler);
-			return new InvocationResult(result, replyTo, this.handlerReturnsMessage.get(handler));
-		}
-		else {
-			return null;
-		}
+		Expression replyTo = this.handlerSendTo.get(handler);
+		return new InvocationResult(result, replyTo, this.handlerReturnsMessage.get(handler));
 	}
 
 	/**
@@ -352,7 +344,6 @@ public class DelegatingInvocableHandler {
 	 * @since 3.2
 	 */
 	@Nullable
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	public InvocationResult getInvocationResultFor(Object result, Object inboundPayload) {
 		InvocableHandlerMethod handler = findHandlerForPayload(inboundPayload.getClass());
 		if (handler != null) {

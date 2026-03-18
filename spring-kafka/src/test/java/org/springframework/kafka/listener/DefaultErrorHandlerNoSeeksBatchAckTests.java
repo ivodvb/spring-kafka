@@ -181,7 +181,7 @@ public class DefaultErrorHandlerNoSeeksBatchAckTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					default:
 						try {
 							Thread.sleep(1000);

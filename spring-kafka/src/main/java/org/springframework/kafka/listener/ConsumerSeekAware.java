@@ -21,7 +21,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * Listeners that implement this interface are provided with a
@@ -60,7 +61,7 @@ public interface ConsumerSeekAware {
 	 * @param partitions the partitions that have been revoked.
 	 * @since 2.3
 	 */
-	default void onPartitionsRevoked(@Nullable Collection<TopicPartition> partitions) {
+	default void onPartitionsRevoked(Collection<TopicPartition> partitions) {
 	}
 
 	/**

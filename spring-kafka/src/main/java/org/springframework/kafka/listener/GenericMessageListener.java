@@ -17,9 +17,9 @@
 package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.Nullable;
 
 /**
  * Top level interface for listeners.
@@ -56,7 +56,7 @@ public interface GenericMessageListener<T> {
 	 * @param consumer the consumer.
 	 * @since 2.0
 	 */
-	default void onMessage(T data, @Nullable Consumer<?, ?> consumer) {
+	default void onMessage(T data, Consumer<?, ?> consumer) {
 		throw new UnsupportedOperationException("Container should never call this");
 	}
 
@@ -68,7 +68,7 @@ public interface GenericMessageListener<T> {
 	 * @param consumer the consumer.
 	 * @since 2.0
 	 */
-	default void onMessage(T data, @Nullable Acknowledgment acknowledgment, @Nullable Consumer<?, ?> consumer) {
+	default void onMessage(T data, @Nullable Acknowledgment acknowledgment, Consumer<?, ?> consumer) {
 		throw new UnsupportedOperationException("Container should never call this");
 	}
 

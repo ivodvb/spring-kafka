@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.listener;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.Assert;
 
@@ -30,15 +28,14 @@ import org.springframework.util.Assert;
  */
 public class ContainerPartitionPausingBackOffManagerFactory extends AbstractKafkaBackOffManagerFactory {
 
-	private @Nullable BackOffHandler backOffHandler;
+	private BackOffHandler backOffHandler;
 
 	/**
 	 * Construct an instance with the provided properties.
 	 * @param listenerContainerRegistry the registry.
 	 * @param applicationContext the application context.
 	 */
-	@SuppressWarnings("this-escape")
-	public ContainerPartitionPausingBackOffManagerFactory(@Nullable ListenerContainerRegistry listenerContainerRegistry,
+	public ContainerPartitionPausingBackOffManagerFactory(ListenerContainerRegistry listenerContainerRegistry,
 			ApplicationContext applicationContext) {
 
 		super(listenerContainerRegistry);

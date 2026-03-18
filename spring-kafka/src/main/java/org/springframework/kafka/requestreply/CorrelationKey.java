@@ -18,8 +18,6 @@ package org.springframework.kafka.requestreply;
 
 import java.util.Arrays;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.util.Assert;
 
 /**
@@ -35,15 +33,9 @@ public final class CorrelationKey {
 
 	private final byte[] correlationId;
 
-	/**
-	 * Cached hex representation of the {@link #correlationId}.
-	 */
-	private @Nullable String asString;
+	private String asString;
 
-	/**
-	 * Cached hash code.
-	 */
-	private volatile @Nullable Integer hashCode;
+	private volatile Integer hashCode;
 
 	public CorrelationKey(byte[] correlationId) { // NOSONAR array reference
 		Assert.notNull(correlationId, "'correlationId' cannot be null");

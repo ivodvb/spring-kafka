@@ -20,18 +20,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.MessageConverter;
+import org.springframework.lang.Nullable;
 
 /**
  * Adapter to avoid having to implement all methods.
  *
  * @author Gary Russell
- * @author Artem Bilan
- *
  * @since 2.2
  *
  */
@@ -40,48 +37,57 @@ class KafkaListenerEndpointAdapter implements KafkaListenerEndpoint {
 	KafkaListenerEndpointAdapter() {
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getId() {
+	public String getId() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getGroupId() {
+	public String getGroupId() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getGroup() {
+	public String getGroup() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable Collection<String> getTopics() {
+	public Collection<String> getTopics() {
 		return Collections.emptyList();
 	}
 
+	@Nullable
 	@Override
-	public TopicPartitionOffset @Nullable [] getTopicPartitionsToAssign() {
+	public TopicPartitionOffset[] getTopicPartitionsToAssign() {
 		return new TopicPartitionOffset[0];
 	}
 
+	@Nullable
 	@Override
-	public @Nullable Pattern getTopicPattern() {
+	public Pattern getTopicPattern() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getClientIdPrefix() {
+	public String getClientIdPrefix() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable Integer getConcurrency() {
+	public Integer getConcurrency() {
 		return null;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable Boolean getAutoStartup() { // NOSONAR
+	public Boolean getAutoStartup() { // NOSONAR
 		return null; // NOSONAR null check by caller
 	}
 
@@ -93,11 +99,6 @@ class KafkaListenerEndpointAdapter implements KafkaListenerEndpoint {
 	@Override
 	public boolean isSplitIterables() {
 		return true;
-	}
-
-	@Override
-	public @Nullable String getAckMode() {
-		return null;
 	}
 
 }

@@ -24,7 +24,6 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.LogFactory;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -49,6 +48,7 @@ import org.springframework.kafka.listener.adapter.ReplyHeadersConfigurer;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.MessageConverter;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
@@ -72,60 +72,56 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 
 	private final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass()));
 
-	private @Nullable String id;
+	private String id;
 
-	private @Nullable String groupId;
+	private String groupId;
 
 	private final Collection<String> topics = new ArrayList<>();
 
-	private @Nullable Pattern topicPattern;
+	private Pattern topicPattern;
 
 	private final Collection<TopicPartitionOffset> topicPartitions = new ArrayList<>();
 
-	private @Nullable BeanFactory beanFactory;
+	private BeanFactory beanFactory;
 
-	private @Nullable BeanExpressionResolver resolver;
+	private BeanExpressionResolver resolver;
 
-	private @Nullable BeanExpressionContext expressionContext;
+	private BeanExpressionContext expressionContext;
 
-	private @Nullable BeanResolver beanResolver;
+	private BeanResolver beanResolver;
 
-	private @Nullable String group;
+	private String group;
 
-	private @Nullable RecordFilterStrategy<K, V> recordFilterStrategy;
+	private RecordFilterStrategy<K, V> recordFilterStrategy;
 
 	private boolean ackDiscarded;
 
-	private @Nullable Boolean batchListener;
+	private Boolean batchListener;
 
-	private boolean shareConsumer;
+	private KafkaTemplate<?, ?> replyTemplate;
 
-	private @Nullable KafkaTemplate<?, ?> replyTemplate;
+	private String clientIdPrefix;
 
-	private @Nullable String clientIdPrefix;
+	private Integer concurrency;
 
-	private @Nullable Integer concurrency;
+	private Boolean autoStartup;
 
-	private @Nullable Boolean autoStartup;
+	private ReplyHeadersConfigurer replyHeadersConfigurer;
 
-	private @Nullable ReplyHeadersConfigurer replyHeadersConfigurer;
-
-	private @Nullable Properties consumerProperties;
+	private Properties consumerProperties;
 
 	private boolean splitIterables = true;
 
-	private @Nullable BatchToRecordAdapter<K, V> batchToRecordAdapter;
+	private BatchToRecordAdapter<K, V> batchToRecordAdapter;
 
-	private byte @Nullable [] listenerInfo;
+	private byte[] listenerInfo;
 
-	private @Nullable String correlationHeaderName;
+	private String correlationHeaderName;
 
-	private @Nullable ContainerPostProcessor<?, ?, ?> containerPostProcessor;
+	private ContainerPostProcessor<?, ?, ?> containerPostProcessor;
 
 	@Nullable
 	private String mainListenerId;
-
-	private @Nullable String ackMode;
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -137,19 +133,23 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 		this.beanResolver = new BeanFactoryResolver(beanFactory);
 	}
 
-	protected @Nullable BeanFactory getBeanFactory() {
+	@Nullable
+	protected BeanFactory getBeanFactory() {
 		return this.beanFactory;
 	}
 
-	protected @Nullable BeanExpressionResolver getResolver() {
+	@Nullable
+	protected BeanExpressionResolver getResolver() {
 		return this.resolver;
 	}
 
-	protected @Nullable BeanExpressionContext getBeanExpressionContext() {
+	@Nullable
+	protected BeanExpressionContext getBeanExpressionContext() {
 		return this.expressionContext;
 	}
 
-	protected @Nullable BeanResolver getBeanResolver() {
+	@Nullable
+	protected BeanResolver getBeanResolver() {
 		return this.beanResolver;
 	}
 
@@ -162,12 +162,14 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	}
 
 	@Override
-	public @Nullable String getMainListenerId() {
+	@Nullable
+	public String getMainListenerId() {
 		return this.mainListenerId;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getId() {
+	public String getId() {
 		return this.id;
 	}
 
@@ -181,8 +183,9 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 		this.groupId = groupId;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getGroupId() {
+	public String getGroupId() {
 		return this.groupId;
 	}
 
@@ -228,8 +231,9 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @return the topicPartitions for this endpoint.
 	 * @since 2.3
 	 */
+	@Nullable
 	@Override
-	public TopicPartitionOffset @Nullable [] getTopicPartitionsToAssign() {
+	public TopicPartitionOffset[] getTopicPartitionsToAssign() {
 		return this.topicPartitions.toArray(new TopicPartitionOffset[0]);
 	}
 
@@ -240,7 +244,7 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @see #setTopicPartitions(TopicPartitionOffset...)
 	 * @see #setTopics(String...)
 	 */
-	public void setTopicPattern(@Nullable Pattern topicPattern) {
+	public void setTopicPattern(Pattern topicPattern) {
 		this.topicPattern = topicPattern;
 	}
 
@@ -248,13 +252,15 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * Return the topicPattern for this endpoint.
 	 * @return the topicPattern for this endpoint.
 	 */
+	@Nullable
 	@Override
-	public @Nullable Pattern getTopicPattern() {
+	public Pattern getTopicPattern() {
 		return this.topicPattern;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getGroup() {
+	public String getGroup() {
 		return this.group;
 	}
 
@@ -262,7 +268,7 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * Set the group for the corresponding listener container.
 	 * @param group the group.
 	 */
-	public void setGroup(@Nullable String group) {
+	public void setGroup(String group) {
 		this.group = group;
 	}
 
@@ -282,7 +288,8 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @since 2.8
 	 */
 	@Override
-	public @Nullable Boolean getBatchListener() {
+	@Nullable
+	public Boolean getBatchListener() {
 		return this.batchListener;
 	}
 
@@ -295,19 +302,6 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 		this.batchListener = batchListener;
 	}
 
-	public void setShareConsumer(boolean shareConsumer) {
-		this.shareConsumer = shareConsumer;
-	}
-
-	/**
-	 * Return true if this endpoint is for a share consumer.
-	 * @return true for a share consumer endpoint.
-	 * @since 4.0
-	 */
-	public boolean isShareConsumer() {
-		return this.shareConsumer;
-	}
-
 	/**
 	 * Set the {@link KafkaTemplate} to use to send replies.
 	 * @param replyTemplate the template.
@@ -317,11 +311,13 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 		this.replyTemplate = replyTemplate;
 	}
 
-	protected @Nullable KafkaTemplate<?, ?> getReplyTemplate() {
+	@Nullable
+	protected KafkaTemplate<?, ?> getReplyTemplate() {
 		return this.replyTemplate;
 	}
 
-	protected @Nullable RecordFilterStrategy<? super K, ? super V> getRecordFilterStrategy() {
+	@Nullable
+	protected RecordFilterStrategy<? super K, ? super V> getRecordFilterStrategy() {
 		return this.recordFilterStrategy;
 	}
 
@@ -346,8 +342,9 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 		this.ackDiscarded = ackDiscarded;
 	}
 
+	@Nullable
 	@Override
-	public @Nullable String getClientIdPrefix() {
+	public String getClientIdPrefix() {
 		return this.clientIdPrefix;
 	}
 
@@ -357,12 +354,13 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @param clientIdPrefix the prefix.
 	 * @since 2.1.1
 	 */
-	public void setClientIdPrefix(@Nullable String clientIdPrefix) {
+	public void setClientIdPrefix(String clientIdPrefix) {
 		this.clientIdPrefix = clientIdPrefix;
 	}
 
 	@Override
-	public @Nullable Integer getConcurrency() {
+	@Nullable
+	public Integer getConcurrency() {
 		return this.concurrency;
 	}
 
@@ -371,12 +369,13 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @param concurrency the concurrency.
 	 * @since 2.2
 	 */
-	public void setConcurrency(@Nullable Integer concurrency) {
+	public void setConcurrency(Integer concurrency) {
 		this.concurrency = concurrency;
 	}
 
 	@Override
-	public @Nullable Boolean getAutoStartup() {
+	@Nullable
+	public Boolean getAutoStartup() {
 		return this.autoStartup;
 	}
 
@@ -385,27 +384,8 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @param autoStartup the autoStartup.
 	 * @since 2.2
 	 */
-	public void setAutoStartup(@Nullable Boolean autoStartup) {
+	public void setAutoStartup(Boolean autoStartup) {
 		this.autoStartup = autoStartup;
-	}
-
-	/**
-	 * Return the ackMode for this endpoint's container.
-	 * @return the ackMode.
-	 * @since 4.1
-	 */
-	public @Nullable String getAckMode() {
-		return this.ackMode;
-	}
-
-	/**
-	 * Set the ackMode for this endpoint's container to override the factory's default.
-	 * @param ackMode the ackMode string (case-insensitive).
-	 * @since 4.1
-	 * @see org.springframework.kafka.listener.ContainerProperties.AckMode
-	 */
-	public void setAckMode(String ackMode) {
-		this.ackMode = ackMode;
 	}
 
 	/**
@@ -418,7 +398,8 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	}
 
 	@Override
-	public @Nullable Properties getConsumerProperties() {
+	@Nullable
+	public Properties getConsumerProperties() {
 		return this.consumerProperties;
 	}
 
@@ -433,7 +414,7 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @see #setGroupId(String)
 	 * @see #setClientIdPrefix(String)
 	 */
-	public void setConsumerProperties(@Nullable Properties consumerProperties) {
+	public void setConsumerProperties(Properties consumerProperties) {
 		this.consumerProperties = consumerProperties;
 	}
 
@@ -453,8 +434,9 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	}
 
 	@Override
-	public byte @Nullable [] getListenerInfo() {
-		return this.listenerInfo;
+	@Nullable
+	public byte[] getListenerInfo() {
+		return this.listenerInfo; // NOSONAR
 	}
 
 	/**
@@ -462,11 +444,12 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	 * @param listenerInfo the info.
 	 * @since 2.8.4
 	 */
-	public void setListenerInfo(byte @Nullable [] listenerInfo) {
-		this.listenerInfo = listenerInfo;
+	public void setListenerInfo(@Nullable byte[] listenerInfo) {  // NOSONAR
+		this.listenerInfo = listenerInfo; // NOSONAR
 	}
 
-	protected @Nullable BatchToRecordAdapter<K, V> getBatchToRecordAdapter() {
+	@Nullable
+	protected BatchToRecordAdapter<K, V> getBatchToRecordAdapter() {
 		return this.batchToRecordAdapter;
 	}
 
@@ -491,7 +474,7 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 	}
 
 	@Override
-	public @Nullable ContainerPostProcessor<?, ?, ?> getContainerPostProcessor() {
+	public ContainerPostProcessor<?, ?, ?> getContainerPostProcessor() {
 		return this.containerPostProcessor;
 	}
 
@@ -550,6 +533,8 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 				.acceptIfNotNull(this.correlationHeaderName, adapter::setCorrelationHeaderName);
 		adapter.setSplitIterables(this.splitIterables);
 		Object messageListener = adapter;
+		Assert.state(messageListener != null,
+				() -> "Endpoint [" + this + "] must provide a non null message listener");
 		if (this.recordFilterStrategy != null) {
 			if (isBatchListener()) {
 				if (((MessagingMessageListenerAdapter<K, V>) messageListener).isConsumerRecords()) {

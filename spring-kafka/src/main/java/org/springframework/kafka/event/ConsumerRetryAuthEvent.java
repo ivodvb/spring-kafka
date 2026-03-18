@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 /**
  * An event published when authentication or authorization of a consumer fails and
  * is being retried. Contains the reason for this event.
@@ -28,7 +26,6 @@ import java.io.Serial;
  */
 public class ConsumerRetryAuthEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

@@ -19,9 +19,9 @@ package org.springframework.kafka.requestreply;
 import java.time.Duration;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 
 /**
@@ -96,7 +96,7 @@ public interface ReplyingKafkaOperations<K, V, R> {
 	 * @since 2.7
 	 */
 	default <P> RequestReplyTypedMessageFuture<K, V, P> sendAndReceive(Message<?> message, Duration replyTimeout,
-			@Nullable ParameterizedTypeReference<P> returnType) {
+			ParameterizedTypeReference<P> returnType) {
 
 		throw new UnsupportedOperationException();
 	}

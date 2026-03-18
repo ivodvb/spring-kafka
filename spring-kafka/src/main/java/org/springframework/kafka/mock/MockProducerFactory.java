@@ -21,9 +21,9 @@ import java.util.function.Supplier;
 
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.lang.Nullable;
 
 /**
  * Support the use of {@link MockProducer} in tests.
@@ -37,7 +37,7 @@ import org.springframework.kafka.core.ProducerFactory;
  */
 public class MockProducerFactory<K, V> implements ProducerFactory<K, V> {
 
-	private final BiFunction<Boolean, @Nullable String, MockProducer<K, V>> producerProvider;
+	private final BiFunction<Boolean, String, MockProducer<K, V>> producerProvider;
 
 	@Nullable
 	private final String defaultTxId;
@@ -61,7 +61,7 @@ public class MockProducerFactory<K, V> implements ProducerFactory<K, V> {
 	 * @param producerProvider the provider function.
 	 * @param defaultTxId the default transactional id.
 	 */
-	public MockProducerFactory(BiFunction<Boolean, @Nullable String, MockProducer<K, V>> producerProvider,
+	public MockProducerFactory(BiFunction<Boolean, String, MockProducer<K, V>> producerProvider,
 			@Nullable String defaultTxId) {
 
 		this.producerProvider = producerProvider;

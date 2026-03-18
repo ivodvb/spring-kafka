@@ -91,7 +91,7 @@ class RetryTopicConfigurationSupportTests {
 		Consumer<RetryTopicConfigurer> rtconfigurer = mock(Consumer.class);
 		Consumer<ListenerContainerFactoryConfigurer> lcfcConsumer = mock(Consumer.class);
 		Consumer<DefaultErrorHandler> errorHandlerCustomizer = mock(Consumer.class);
-		BackOff backOff = mock(BackOff.class);
+		BackOff backoff = mock(BackOff.class);
 
 		RetryTopicConfigurationSupport support = new RetryTopicConfigurationSupport() {
 			@Override
@@ -126,7 +126,7 @@ class RetryTopicConfigurationSupportTests {
 			protected void configureBlockingRetries(BlockingRetriesConfigurer blockingRetries) {
 				blockingRetries
 						.retryOn(RuntimeException.class)
-						.backOff(backOff);
+						.backOff(backoff);
 			}
 		};
 
@@ -154,7 +154,7 @@ class RetryTopicConfigurationSupportTests {
 				.isSameAs(errorHandlerCustomizer);
 		assertThatThrownBy(lcfc::setBlockingRetryableExceptions).isInstanceOf(IllegalStateException.class);
 		assertThat(KafkaTestUtils.getPropertyValue(lcfc, "providedBlockingBackOff"))
-				.isSameAs(backOff);
+				.isSameAs(backoff);
 		assertThat(KafkaTestUtils.getPropertyValue(lcfc, "retainStandardFatal", Boolean.class)).isTrue();
 		then(dlprfCustomizer).should().accept(dlprf);
 		then(rtconfigurer).should().accept(topicConfigurer);

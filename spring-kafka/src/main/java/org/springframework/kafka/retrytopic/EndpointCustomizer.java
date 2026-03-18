@@ -18,8 +18,6 @@ package org.springframework.kafka.retrytopic;
 
 import java.util.Collection;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
 
 /**
@@ -46,6 +44,23 @@ public interface EndpointCustomizer<T extends MethodKafkaListenerEndpoint<?, ?>>
 	 */
 	Collection<TopicNamesHolder> customizeEndpointAndCollectTopics(T listenerEndpoint);
 
-	record TopicNamesHolder(String mainTopic, @Nullable String customizedTopic) {
+	class TopicNamesHolder {
+
+		private final String mainTopic;
+
+		private final String customizedTopic;
+
+		TopicNamesHolder(String mainTopic, String customizedTopic) {
+			this.mainTopic = mainTopic;
+			this.customizedTopic = customizedTopic;
+		}
+
+		String getMainTopic() {
+			return this.mainTopic;
+		}
+
+		String getCustomizedTopic() {
+			return this.customizedTopic;
+		}
 	}
 }

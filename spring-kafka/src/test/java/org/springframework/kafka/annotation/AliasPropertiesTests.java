@@ -46,7 +46,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
@@ -139,7 +139,7 @@ public class AliasPropertiesTests {
 
 		@Bean
 		public EmbeddedKafkaBroker embeddedKafka() {
-			return new EmbeddedKafkaKraftBroker(1, 1, "alias.tests");
+			return new EmbeddedKafkaZKBroker(1, true, "alias.tests");
 		}
 
 		@Bean
@@ -157,7 +157,9 @@ public class AliasPropertiesTests {
 
 		@Bean
 		public Map<String, Object> consumerConfigs() {
-			return KafkaTestUtils.consumerProps(embeddedKafka(), "myAliasGroup", false);
+			Map<String, Object> consumerProps =
+					KafkaTestUtils.consumerProps("myAliasGroup", "false", embeddedKafka());
+			return consumerProps;
 		}
 
 		@Bean

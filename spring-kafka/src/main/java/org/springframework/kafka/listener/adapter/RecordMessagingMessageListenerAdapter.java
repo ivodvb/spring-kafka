@@ -20,14 +20,12 @@ import java.lang.reflect.Method;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.listener.AcknowledgingConsumerAwareMessageListener;
 import org.springframework.kafka.listener.KafkaListenerErrorHandler;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.kafka.support.converter.JacksonProjectingMessageConverter;
 import org.springframework.kafka.support.converter.ProjectingMessageConverter;
-import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 
 /**
@@ -52,11 +50,11 @@ import org.springframework.messaging.Message;
 public class RecordMessagingMessageListenerAdapter<K, V> extends MessagingMessageListenerAdapter<K, V>
 		implements AcknowledgingConsumerAwareMessageListener<K, V> {
 
-	public RecordMessagingMessageListenerAdapter(@Nullable Object bean, @Nullable Method method) {
+	public RecordMessagingMessageListenerAdapter(Object bean, Method method) {
 		this(bean, method, null);
 	}
 
-	public RecordMessagingMessageListenerAdapter(@Nullable Object bean, @Nullable Method method,
+	public RecordMessagingMessageListenerAdapter(Object bean, Method method,
 			@Nullable KafkaListenerErrorHandler errorHandler) {
 
 		super(bean, method, errorHandler);
@@ -71,9 +69,8 @@ public class RecordMessagingMessageListenerAdapter<K, V> extends MessagingMessag
 	 * @param consumer the consumer.
 	 */
 	@Override
-	@SuppressWarnings("removal")
 	public void onMessage(ConsumerRecord<K, V> record, @Nullable Acknowledgment acknowledgment,
-			@Nullable Consumer<?, ?> consumer) {
+			Consumer<?, ?> consumer) {
 
 		Message<?> message;
 		if (isConversionNeeded()) {
@@ -82,12 +79,8 @@ public class RecordMessagingMessageListenerAdapter<K, V> extends MessagingMessag
 		else {
 			message = NULL_MESSAGE;
 		}
-		if (logger.isDebugEnabled()) {
-			RecordMessageConverter messageConverter = getMessageConverter();
-			if (!(messageConverter instanceof JacksonProjectingMessageConverter
-					|| messageConverter instanceof ProjectingMessageConverter)) {
-				this.logger.debug("Processing [" + message + "]");
-			}
+		if (logger.isDebugEnabled() && !(getMessageConverter() instanceof ProjectingMessageConverter)) {
+			this.logger.debug("Processing [" + message + "]");
 		}
 		invoke(record, acknowledgment, consumer, message);
 	}

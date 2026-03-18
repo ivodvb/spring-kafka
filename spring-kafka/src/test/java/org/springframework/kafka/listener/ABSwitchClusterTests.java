@@ -78,7 +78,7 @@ public class ABSwitchClusterTests {
 	@EnableKafka
 	public static class Config {
 
-		private static final ConsumerRecords<Object, Object> EMPTY = new ConsumerRecords<>(Collections.emptyMap(), Map.of());
+		private static final ConsumerRecords<Object, Object> EMPTY = new ConsumerRecords<>(Collections.emptyMap());
 
 		volatile CountDownLatch latch = new CountDownLatch(1);
 

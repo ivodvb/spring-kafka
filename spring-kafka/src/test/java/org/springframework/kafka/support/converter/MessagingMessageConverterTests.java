@@ -26,10 +26,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -100,7 +100,7 @@ public class MessagingMessageConverterTests {
 	@Test
 	void delegate() {
 		MessagingMessageConverter converter = new MessagingMessageConverter();
-		converter.setMessagingConverter(new MappingJacksonJsonParameterizedConverter());
+		converter.setMessagingConverter(new MappingJacksonParameterizedConverter());
 		Headers headers = new RecordHeaders();
 		headers.add(new RecordHeader(MessageHeaders.CONTENT_TYPE, "application/json".getBytes()));
 		ConsumerRecord<String, String> record =
@@ -114,7 +114,7 @@ public class MessagingMessageConverterTests {
 	void delegateNoContentType() {
 		// this works because of the type hint
 		MessagingMessageConverter converter = new MessagingMessageConverter();
-		converter.setMessagingConverter(new MappingJacksonJsonParameterizedConverter());
+		converter.setMessagingConverter(new MappingJacksonParameterizedConverter());
 		ConsumerRecord<String, String> record =
 				new ConsumerRecord<>("foo", 1, 42, -1L, null, 0, 0, "bar", "{ \"foo\":\"bar\"}",
 						new RecordHeaders(), Optional.empty());
@@ -183,14 +183,16 @@ public class MessagingMessageConverterTests {
 		}
 
 		@Override
-		protected @Nullable Object convertFromInternal(Message<?> message, Class<?> targetClass,
+		@Nullable
+		protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
 				@Nullable Object conversionHint) {
 
 			return new Foo("bar");
 		}
 
 		@Override
-		protected @Nullable Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+		@Nullable
+		protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 				@Nullable Object conversionHint) {
 
 			return "foo".getBytes();
@@ -205,14 +207,16 @@ public class MessagingMessageConverterTests {
 		}
 
 		@Override
-		protected @Nullable Object convertFromInternal(Message<?> message, Class<?> targetClass,
+		@Nullable
+		protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
 				@Nullable Object conversionHint) {
 
 			return new Bar("bar");
 		}
 
 		@Override
-		protected @Nullable Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+		@Nullable
+		protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 				@Nullable Object conversionHint) {
 
 			return "bar".getBytes();

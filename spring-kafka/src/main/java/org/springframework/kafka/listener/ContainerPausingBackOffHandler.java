@@ -19,10 +19,11 @@ package org.springframework.kafka.listener;
 import java.time.Duration;
 
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
- * A {@link BackOffHandler} that pauses the container for the requested back off period.
+ * A {@link BackOffHandler} that pauses the container for the backoff.
  *
  * @author Gary Russell
  * @since 2.9
@@ -43,7 +44,7 @@ public class ContainerPausingBackOffHandler implements BackOffHandler {
 	}
 
 	@Override
-	public void onNextBackOff(@Nullable MessageListenerContainer container, @Nullable Exception exception, long nextBackOff) {
+	public void onNextBackOff(@Nullable MessageListenerContainer container, Exception exception, long nextBackOff) {
 		if (container == null) {
 			this.defaultBackOffHandler.onNextBackOff(container, exception, nextBackOff); // NOSONAR
 		}

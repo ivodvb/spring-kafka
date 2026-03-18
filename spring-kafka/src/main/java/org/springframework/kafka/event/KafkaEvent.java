@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 import org.springframework.context.ApplicationEvent;
 import org.springframework.util.Assert;
 
@@ -29,12 +27,9 @@ import org.springframework.util.Assert;
  */
 public abstract class KafkaEvent extends ApplicationEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
-	private static final String UNCHECKED = "unchecked";
-
-	private transient final Object container;
+	private transient Object container;
 
 	public KafkaEvent(Object source, Object container) {
 		super(source);
@@ -52,7 +47,7 @@ public abstract class KafkaEvent extends ApplicationEvent {
 	 * @since 2.2.1
 	 * @see #getSource(Class)
 	 */
-	@SuppressWarnings(UNCHECKED)
+	@SuppressWarnings("unchecked")
 	public <T> T getContainer(Class<T> type) {
 		Assert.isInstanceOf(type, this.container);
 		return (T) this.container;
@@ -70,7 +65,7 @@ public abstract class KafkaEvent extends ApplicationEvent {
 	 * @see #getContainer(Class)
 	 * @see #getSource()
 	 */
-	@SuppressWarnings(UNCHECKED)
+	@SuppressWarnings("unchecked")
 	public <T> T getSource(Class<T> type) {
 		Assert.isInstanceOf(type, getSource());
 		return (T) getSource();

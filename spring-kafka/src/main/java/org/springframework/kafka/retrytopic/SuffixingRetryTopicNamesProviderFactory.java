@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.retrytopic;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.config.KafkaListenerEndpoint;
 import org.springframework.kafka.support.Suffixer;
 
@@ -43,27 +41,27 @@ public class SuffixingRetryTopicNamesProviderFactory implements RetryTopicNamesP
 		}
 
 		@Override
-		public @Nullable String getEndpointId(KafkaListenerEndpoint endpoint) {
+		public String getEndpointId(KafkaListenerEndpoint endpoint) {
 			return this.suffixer.maybeAddTo(endpoint.getId());
 		}
 
 		@Override
-		public @Nullable String getGroupId(KafkaListenerEndpoint endpoint) {
+		public String getGroupId(KafkaListenerEndpoint endpoint) {
 			return this.suffixer.maybeAddTo(endpoint.getGroupId());
 		}
 
 		@Override
-		public @Nullable String getClientIdPrefix(KafkaListenerEndpoint endpoint) {
+		public String getClientIdPrefix(KafkaListenerEndpoint endpoint) {
 			return this.suffixer.maybeAddTo(endpoint.getClientIdPrefix());
 		}
 
 		@Override
-		public @Nullable String getGroup(KafkaListenerEndpoint endpoint) {
+		public String getGroup(KafkaListenerEndpoint endpoint) {
 			return this.suffixer.maybeAddTo(endpoint.getGroup());
 		}
 
 		@Override
-		public @Nullable String getTopicName(String topic) {
+		public String getTopicName(String topic) {
 			return this.suffixer.maybeAddTo(topic);
 		}
 

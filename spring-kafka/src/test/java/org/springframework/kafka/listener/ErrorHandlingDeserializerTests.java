@@ -47,12 +47,11 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.KafkaUtils;
 import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.SerializationUtils;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -111,7 +110,7 @@ public class ErrorHandlingDeserializerTests {
 		Headers headers = new RecordHeaders();
 		Object result = ehd.deserialize("topic", headers, "foo".getBytes());
 		assertThat(result).isNull();
-		Header deser = headers.lastHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER);
+		Header deser = headers.lastHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER);
 		assertThat(new ObjectInputStream(new ByteArrayInputStream(deser.value())).readObject()).isInstanceOf(DeserializationException.class);
 		ehd.close();
 	}
@@ -136,7 +135,7 @@ public class ErrorHandlingDeserializerTests {
 		Headers headers = new RecordHeaders();
 		ehd.deserialize("foo", headers, new byte[1]);
 		DeserializationException dex = SerializationUtils.byteArrayToDeserializationException(null,
-				headers.lastHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
+				headers.lastHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
 		assertThat(dex.getCause().getMessage())
 				.contains("Could not serialize")
 				.contains("original exception message");
@@ -151,7 +150,7 @@ public class ErrorHandlingDeserializerTests {
 		assertThat(ehd.deserialize("foo", headers, "foo".getBytes())).isEqualTo("foo");
 		ehd.deserialize("foo", headers, "bar".getBytes());
 		DeserializationException ex = SerializationUtils.byteArrayToDeserializationException(null,
-				headers.lastHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
+				headers.lastHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
 		assertThat(ex.getCause()).isInstanceOf(IllegalStateException.class)
 				.extracting("message", InstanceOfAssertFactories.STRING)
 				.contains("validation failure");
@@ -171,7 +170,7 @@ public class ErrorHandlingDeserializerTests {
 		});
 		ehd.deserialize("foo", headers, "baz".getBytes());
 		ex = SerializationUtils.byteArrayToDeserializationException(null,
-				headers.lastHeader(KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
+				headers.lastHeader(SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER));
 		assertThat(ex.getCause()).isInstanceOf(IllegalArgumentException.class)
 				.extracting("message")
 				.isEqualTo("test validation");
@@ -205,7 +204,7 @@ public class ErrorHandlingDeserializerTests {
 
 		@Bean
 		public EmbeddedKafkaBroker embeddedKafka() {
-			return new EmbeddedKafkaKraftBroker(1,  1, TOPIC);
+			return new EmbeddedKafkaZKBroker(1, true, 1, TOPIC);
 		}
 
 		@Bean
@@ -246,7 +245,7 @@ public class ErrorHandlingDeserializerTests {
 
 		@Bean
 		public ConsumerFactory<String, String> cf() {
-			Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka(), TOPIC + ".g1", false);
+			Map<String, Object> props = KafkaTestUtils.consumerProps(TOPIC + ".g1", "false", embeddedKafka());
 			props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ExtendedEHD.class.getName());
 			props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
 			props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, FailSometimesDeserializer.class);
@@ -256,7 +255,7 @@ public class ErrorHandlingDeserializerTests {
 
 		@Bean
 		public ConsumerFactory<String, String> cfWithExplicitDeserializers() {
-			Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka(), TOPIC + ".g2", false);
+			Map<String, Object> props = KafkaTestUtils.consumerProps(TOPIC + ".g2", "false", embeddedKafka());
 			return new DefaultKafkaConsumerFactory<>(props,
 					new ErrorHandlingDeserializer<String>(new FailSometimesDeserializer()).keyDeserializer(true),
 					new ErrorHandlingDeserializer<String>(new FailSometimesDeserializer()));

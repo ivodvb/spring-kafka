@@ -202,11 +202,11 @@ public class ManualNackRecordZeroSleepTests {
 				switch (which.getAndIncrement()) {
 					case 0:
 					case 1:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					case 2:
-						return new ConsumerRecords(records2, Map.of());
+						return new ConsumerRecords(records2);
 					case 3:
-						return new ConsumerRecords(records3, Map.of());
+						return new ConsumerRecords(records3);
 					default:
 						try {
 							Thread.sleep(1000);
@@ -214,7 +214,7 @@ public class ManualNackRecordZeroSleepTests {
 						catch (InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(Duration.ofMillis(ContainerProperties.DEFAULT_POLL_TIMEOUT));
 			willAnswer(i -> {

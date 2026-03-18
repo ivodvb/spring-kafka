@@ -22,7 +22,8 @@ import java.util.function.Supplier;
 import io.micrometer.observation.transport.ReceiverContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * {@link ReceiverContext} for {@link ConsumerRecord}s.
@@ -38,9 +39,9 @@ public class KafkaRecordReceiverContext extends ReceiverContext<ConsumerRecord<?
 
 	private final String listenerId;
 
-	private final @Nullable String clientId;
+	private final String clientId;
 
-	private final @Nullable String groupId;
+	private final String groupId;
 
 	private final ConsumerRecord<?, ?> record;
 
@@ -63,9 +64,8 @@ public class KafkaRecordReceiverContext extends ReceiverContext<ConsumerRecord<?
 	 * @param clusterId		the kafka cluster id.
 	 * @since 3.2
 	 */
-	@SuppressWarnings("this-escape")
-	public KafkaRecordReceiverContext(ConsumerRecord<?, ?> record, String listenerId, @Nullable String clientId,
-			@Nullable String groupId, Supplier<String> clusterId) {
+	public KafkaRecordReceiverContext(ConsumerRecord<?, ?> record, String listenerId, String clientId, String groupId,
+			Supplier<String> clusterId) {
 		super((carrier, key) -> {
 			Header header = carrier.headers().lastHeader(key);
 			if (header == null || header.value() == null) {
@@ -95,7 +95,7 @@ public class KafkaRecordReceiverContext extends ReceiverContext<ConsumerRecord<?
 	 * @return the consumer group id.
 	 * @since 3.2
 	 */
-	public @Nullable String getGroupId() {
+	public String getGroupId() {
 		return this.groupId;
 	}
 

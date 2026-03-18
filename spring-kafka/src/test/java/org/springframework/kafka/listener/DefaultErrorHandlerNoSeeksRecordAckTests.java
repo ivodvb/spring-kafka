@@ -140,7 +140,7 @@ public class DefaultErrorHandlerNoSeeksRecordAckTests {
 			.willReturn(consumer);
 		ConsumerRecords records = new ConsumerRecords(Map.of(new TopicPartition("foo", 0),
 				List.of(new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",
-							new RecordHeaders(), Optional.empty()))), Map.of());
+							new RecordHeaders(), Optional.empty()))));
 		willAnswer(inv -> {
 			Thread.sleep(20);
 			return records;
@@ -235,7 +235,7 @@ public class DefaultErrorHandlerNoSeeksRecordAckTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					default:
 						try {
 							Thread.sleep(50);

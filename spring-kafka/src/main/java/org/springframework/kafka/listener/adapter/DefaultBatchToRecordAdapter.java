@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
@@ -63,8 +62,8 @@ public class DefaultBatchToRecordAdapter<K, V> implements BatchToRecordAdapter<K
 	}
 
 	@Override
-	public void adapt(List<Message<?>> messages, List<ConsumerRecord<K, V>> records, @Nullable Acknowledgment ack,
-			@Nullable Consumer<?, ?> consumer, Callback<K, V> callback) {
+	public void adapt(List<Message<?>> messages, List<ConsumerRecord<K, V>> records, Acknowledgment ack,
+			Consumer<?, ?> consumer, Callback<K, V> callback) {
 
 		for (int i = 0; i < messages.size(); i++) {
 			Message<?> message = messages.get(i);

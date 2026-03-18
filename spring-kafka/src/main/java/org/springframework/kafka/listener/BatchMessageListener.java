@@ -21,9 +21,9 @@ import java.util.List;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.Nullable;
 
 /**
  * Listener for handling a batch of incoming Kafka messages; the list

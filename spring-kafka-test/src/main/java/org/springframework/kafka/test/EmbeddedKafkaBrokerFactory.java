@@ -63,8 +63,12 @@ public final class EmbeddedKafkaBrokerFactory {
 						.toArray(String[]::new);
 
 		EmbeddedKafkaBroker embeddedKafkaBroker;
-		embeddedKafkaBroker = kraftBroker(embeddedKafka, topics);
-
+		if (embeddedKafka.kraft()) {
+			embeddedKafkaBroker = kraftBroker(embeddedKafka, topics);
+		}
+		else {
+			embeddedKafkaBroker = zkBroker(embeddedKafka, topics);
+		}
 		int[] ports = setupPorts(embeddedKafka);
 
 		embeddedKafkaBroker.kafkaPorts(ports)
@@ -127,6 +131,13 @@ public final class EmbeddedKafkaBrokerFactory {
 
 	private static EmbeddedKafkaBroker kraftBroker(EmbeddedKafka embedded, String[] topics) {
 		return new EmbeddedKafkaKraftBroker(embedded.count(), embedded.partitions(), topics);
+	}
+
+	private static EmbeddedKafkaBroker zkBroker(EmbeddedKafka embedded, String[] topics) {
+		return new EmbeddedKafkaZKBroker(embedded.count(), embedded.controlledShutdown(), embedded.partitions(), topics)
+				.zkPort(embedded.zookeeperPort())
+				.zkConnectionTimeout(embedded.zkConnectionTimeout())
+				.zkSessionTimeout(embedded.zkSessionTimeout());
 	}
 
 	private EmbeddedKafkaBrokerFactory() {

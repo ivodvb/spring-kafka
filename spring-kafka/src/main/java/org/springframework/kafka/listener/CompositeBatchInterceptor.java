@@ -22,7 +22,6 @@ import java.util.Collection;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.util.Assert;
 
@@ -34,7 +33,6 @@ import org.springframework.util.Assert;
  * @param <V> the value type.
  *
  * @author Gary Russell
- * @author Christian Fredriksson
  * @since 2.7
  *
  */
@@ -55,7 +53,7 @@ public class CompositeBatchInterceptor<K, V> implements BatchInterceptor<K, V> {
 	}
 
 	@Override
-	public @Nullable ConsumerRecords<K, V> intercept(ConsumerRecords<K, V> records, Consumer<K, V> consumer) {
+	public ConsumerRecords<K, V> intercept(ConsumerRecords<K, V> records, Consumer<K, V> consumer) {
 		ConsumerRecords<K, V> recordsToIntercept = records;
 		for (BatchInterceptor<K, V> delegate : this.delegates) {
 			recordsToIntercept = delegate.intercept(recordsToIntercept, consumer);
@@ -84,15 +82,6 @@ public class CompositeBatchInterceptor<K, V> implements BatchInterceptor<K, V> {
 	@Override
 	public void clearThreadState(Consumer<?, ?> consumer) {
 		this.delegates.forEach(del -> del.clearThreadState(consumer));
-	}
-
-	/**
-	 * Add an {@link BatchInterceptor} to delegates.
-	 * @param batchInterceptor the interceptor.
-	 * @since 4.0
-	 */
-	public void addBatchInterceptor(BatchInterceptor<K, V> batchInterceptor) {
-		this.delegates.add(batchInterceptor);
 	}
 
 }

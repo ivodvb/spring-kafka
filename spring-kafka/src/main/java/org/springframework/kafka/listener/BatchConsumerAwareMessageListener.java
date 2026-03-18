@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Listener for handling a batch of incoming Kafka messages; the list
@@ -38,7 +37,7 @@ import org.jspecify.annotations.Nullable;
 public interface BatchConsumerAwareMessageListener<K, V> extends BatchMessageListener<K, V> {
 
 	/**
-	 * Invoked with data from kafka. Containers should never call this since they
+	 * Invoked with data from kafka. Containers should never call this since it they
 	 * will detect that we are a consumer aware acknowledging listener.
 	 * @param data the data to be processed.
 	 */
@@ -48,6 +47,6 @@ public interface BatchConsumerAwareMessageListener<K, V> extends BatchMessageLis
 	}
 
 	@Override
-	void onMessage(List<ConsumerRecord<K, V>> data, @Nullable Consumer<?, ?> consumer);
+	void onMessage(List<ConsumerRecord<K, V>> data, Consumer<?, ?> consumer);
 
 }

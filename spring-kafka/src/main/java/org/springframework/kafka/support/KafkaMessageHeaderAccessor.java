@@ -18,9 +18,8 @@ package org.springframework.kafka.support;
 
 import java.nio.ByteBuffer;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.retrytopic.RetryTopicHeaders;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.util.Assert;
@@ -53,8 +52,7 @@ public class KafkaMessageHeaderAccessor extends MessageHeaderAccessor {
 		Assert.state(getHeader(KafkaHeaders.DELIVERY_ATTEMPT) != null,
 				"Blocking delivery attempt header not present, "
 				+ "see ContainerProperties.setDeliveryAttemptHeader() to enable");
-		Integer deliveryAttempts = getHeader(KafkaHeaders.DELIVERY_ATTEMPT, Integer.class);
-		return deliveryAttempts == null ? 0 : deliveryAttempts;
+		return getHeader(KafkaHeaders.DELIVERY_ATTEMPT, Integer.class);
 	}
 
 	/**

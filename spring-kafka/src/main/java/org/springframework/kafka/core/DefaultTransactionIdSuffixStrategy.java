@@ -22,8 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jspecify.annotations.Nullable;
-
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -64,7 +63,7 @@ public class DefaultTransactionIdSuffixStrategy implements TransactionIdSuffixSt
 	 * @throws NoProducerAvailableException if caching is enabled and no suffixes are available.
 	 */
 	@Override
-	public String acquireSuffix(@Nullable String txIdPrefix) {
+	public String acquireSuffix(String txIdPrefix) {
 		Assert.notNull(txIdPrefix, "'txIdPrefix' must not be null");
 		BlockingQueue<String> cache = getSuffixCache(txIdPrefix);
 		if (cache == null) {
@@ -79,7 +78,7 @@ public class DefaultTransactionIdSuffixStrategy implements TransactionIdSuffixSt
 	}
 
 	@Override
-	public void releaseSuffix(@Nullable String txIdPrefix, @Nullable String suffix) {
+	public void releaseSuffix(String txIdPrefix, String suffix) {
 		Assert.notNull(txIdPrefix, "'txIdPrefix' must not be null");
 		Assert.notNull(suffix, "'suffix' must not be null");
 		if (this.maxCache <= 0) {

@@ -38,9 +38,9 @@ class Application {
     fun topic() = NewTopic("topic1", 10, 1)
 
     @Bean
-    fun runner(template: KafkaTemplate<String, String>) =
+    fun runner(template: KafkaTemplate<String?, String?>) =
         ApplicationRunner { template.send("topic1", "test") }
-    
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) = runApplication<Application>(*args)

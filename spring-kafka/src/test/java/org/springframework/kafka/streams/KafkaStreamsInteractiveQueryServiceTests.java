@@ -17,7 +17,6 @@
 package org.springframework.kafka.streams;
 
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -45,8 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.retry.RetryPolicy;
-import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -62,8 +59,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -94,7 +96,7 @@ class KafkaStreamsInteractiveQueryServiceTests {
 	public static final String NON_EXISTENT_STORE = "my-non-existent-store";
 
 	@Autowired
-	private EmbeddedKafkaBroker embeddedKafka;
+	private EmbeddedKafkaZKBroker embeddedKafka;
 
 	@Autowired
 	private StreamsBuilderFactoryBean streamsBuilderFactoryBean;
@@ -192,8 +194,7 @@ class KafkaStreamsInteractiveQueryServiceTests {
 					this.interactiveQueryService.getKafkaStreamsApplicationHostInfo(NON_EXISTENT_STORE, 12345,
 							serializer);
 				})
-				.withMessage("Error when retrieving state store.")
-				.havingCause().withMessage("KeyQueryMetadata is not yet available.");
+				.withMessageContaining("Error when retrieving state store.");
 
 		verify(kafkaStreams, times(3)).queryMetadataForKey(NON_EXISTENT_STORE, 12345,
 				serializer);
@@ -226,7 +227,8 @@ class KafkaStreamsInteractiveQueryServiceTests {
 
 		@Bean
 		public Map<String, Object> consumerConfigs() {
-			return KafkaTestUtils.consumerProps(this.brokerAddresses, "testGroup", false);
+			return KafkaTestUtils.consumerProps(this.brokerAddresses, "testGroup",
+					"false");
 		}
 
 		@Bean
@@ -275,7 +277,9 @@ class KafkaStreamsInteractiveQueryServiceTests {
 			final KafkaStreamsInteractiveQueryService kafkaStreamsInteractiveQueryService =
 					new KafkaStreamsInteractiveQueryService(streamsBuilderFactoryBean);
 			RetryTemplate retryTemplate = new RetryTemplate();
-			retryTemplate.setRetryPolicy(RetryPolicy.builder().maxRetries(2).delay(Duration.ZERO).build());
+			retryTemplate.setBackOffPolicy(new FixedBackOffPolicy());
+			RetryPolicy retryPolicy = new SimpleRetryPolicy(3);
+			retryTemplate.setRetryPolicy(retryPolicy);
 			kafkaStreamsInteractiveQueryService.setRetryTemplate(retryTemplate);
 			return kafkaStreamsInteractiveQueryService;
 		}

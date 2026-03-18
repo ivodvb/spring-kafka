@@ -36,7 +36,6 @@ import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Serializer;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -47,11 +46,12 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.event.ConsumerStoppedEvent;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,10 +89,10 @@ public class SeekToCurrentRecovererTests {
 
 	@Test
 	public void testMaxFailures() throws Exception {
-		Map<String, Object> props = KafkaTestUtils.consumerProps(embeddedKafka, "seekTestMaxFailures", false);
+		Map<String, Object> props = KafkaTestUtils.consumerProps("seekTestMaxFailures", "false", embeddedKafka);
 		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(props, null,
-				new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(String.class)));
+				new ErrorHandlingDeserializer<>(new JsonDeserializer<>(String.class)));
 		ContainerProperties containerProps = new ContainerProperties(topic1);
 		containerProps.setPollTimeout(10_000);
 

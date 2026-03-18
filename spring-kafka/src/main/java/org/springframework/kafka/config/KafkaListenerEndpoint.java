@@ -20,11 +20,10 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.MessageConverter;
+import org.springframework.lang.Nullable;
 
 /**
  * Model for a Kafka listener endpoint. Can be used against a
@@ -33,7 +32,6 @@ import org.springframework.kafka.support.converter.MessageConverter;
  *
  * @author Stephane Nicoll
  * @author Gary Russell
- * @author Go BeomJun
  */
 public interface KafkaListenerEndpoint {
 
@@ -67,7 +65,6 @@ public interface KafkaListenerEndpoint {
 	 * Return the topics for this endpoint.
 	 * @return the topics for this endpoint.
 	 */
-	@Nullable
 	Collection<String> getTopics();
 
 	/**
@@ -75,7 +72,8 @@ public interface KafkaListenerEndpoint {
 	 * @return the topicPartitions for this endpoint.
 	 * @since 2.3
 	 */
-	TopicPartitionOffset @Nullable [] getTopicPartitionsToAssign();
+	@Nullable
+	TopicPartitionOffset[] getTopicPartitionsToAssign();
 
 	/**
 	 * Return the topicPattern for this endpoint.
@@ -152,7 +150,8 @@ public interface KafkaListenerEndpoint {
 	 * @return the info.
 	 * @since 2.8.4
 	 */
-	default byte @Nullable [] getListenerInfo() {
+	@Nullable
+	default byte[] getListenerInfo() {
 		return null;
 	}
 
@@ -187,14 +186,5 @@ public interface KafkaListenerEndpoint {
 	default ContainerPostProcessor<?, ?, ?> getContainerPostProcessor() {
 		return null;
 	}
-
-	/**
-	 * Return the ackMode for this endpoint, or null if not explicitly set.
-	 * @return the ack mode string.
-	 * @since 4.1
-	 * @see org.springframework.kafka.listener.ContainerProperties.AckMode
-	 */
-	@Nullable
-	String getAckMode();
 
 }

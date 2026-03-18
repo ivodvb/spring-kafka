@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -41,6 +40,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import kafka.server.KafkaConfig;
+import kafka.testkit.KafkaClusterTestKit;
+import kafka.testkit.TestKitNodes;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -51,11 +52,8 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.test.KafkaClusterTestKit;
-import org.apache.kafka.common.test.TestKitNodes;
 import org.apache.kafka.common.utils.Exit;
 import org.apache.kafka.common.utils.Utils;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.util.Assert;
@@ -95,7 +93,7 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 	private static final boolean IS_KAFKA_39_OR_LATER = ClassUtils.isPresent(
 			"org.apache.kafka.server.config.AbstractKafkaConfig", EmbeddedKafkaKraftBroker.class.getClassLoader());
 
-	private static final @Nullable Method SET_CONFIG_METHOD;
+	private static final Method SET_CONFIG_METHOD;
 
 	static {
 		if (IS_KAFKA_39_OR_LATER) {
@@ -119,7 +117,7 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 
 	private final AtomicBoolean initialized = new AtomicBoolean();
 
-	private @Nullable KafkaClusterTestKit cluster;
+	private KafkaClusterTestKit cluster;
 
 	private int[] kafkaPorts;
 
@@ -133,7 +131,7 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 	 * @param partitions partitions per topic.
 	 * @param topics the topics to create.
 	 */
-	public EmbeddedKafkaKraftBroker(int count, int partitions, String @Nullable ... topics) {
+	public EmbeddedKafkaKraftBroker(int count, int partitions, String... topics) {
 		this.count = count;
 		this.kafkaPorts = new int[this.count]; // random ports by default.
 		if (topics != null) {
@@ -251,16 +249,19 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 		}
 
 		createKafkaTopics(this.topics);
-		System.setProperty(this.brokerListProperty, getBrokersAsString());
+		if (this.brokerListProperty == null) {
+			this.brokerListProperty = System.getProperty(BROKER_LIST_PROPERTY);
+		}
+		if (this.brokerListProperty != null) {
+			System.setProperty(this.brokerListProperty, getBrokersAsString());
+		}
 		System.setProperty(SPRING_EMBEDDED_KAFKA_BROKERS, getBrokersAsString());
 	}
 
 	private static void setConfigProperty(KafkaClusterTestKit.Builder clusterBuilder, String key, Object value) {
 		if (IS_KAFKA_39_OR_LATER) {
 			// For Kafka 3.9.0+: use reflection
-			if (SET_CONFIG_METHOD != null) {
-				ReflectionUtils.invokeMethod(SET_CONFIG_METHOD, clusterBuilder, key, value);
-			}
+			ReflectionUtils.invokeMethod(SET_CONFIG_METHOD, clusterBuilder, key, value);
 		}
 		else {
 			// For Kafka 3.8.0: direct call
@@ -270,7 +271,7 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 
 	@Override
 	public void destroy() {
-		AtomicReference<@Nullable Throwable> shutdownFailure = new AtomicReference<>();
+		AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
 		Utils.closeQuietly(cluster, "embedded Kafka cluster", shutdownFailure);
 		if (shutdownFailure.get() != null) {
 			throw new IllegalStateException("Failed to shut down embedded Kafka cluster", shutdownFailure.get());
@@ -483,12 +484,10 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 
 	@Override
 	public String getBrokersAsString() {
-		Assert.notNull(this.cluster, "cluster cannot be null");
-		String brokersString = (String) this.cluster.clientProperties().get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG);
-		return Objects.requireNonNull(brokersString);
+		return (String) this.cluster.clientProperties().get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG);
 	}
 
-	public @Nullable KafkaClusterTestKit getCluster() {
+	public KafkaClusterTestKit getCluster() {
 		return this.cluster;
 	}
 
@@ -559,11 +558,11 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 	public void consumeFromEmbeddedTopics(Consumer<?, ?> consumer, boolean seekToEnd, String... topicsToConsume) {
 		List<String> notEmbedded = Arrays.stream(topicsToConsume)
 				.filter(topic -> !this.topics.contains(topic))
-				.toList();
+				.collect(Collectors.toList());
 		if (!notEmbedded.isEmpty()) {
 			throw new IllegalStateException("topic(s):'" + notEmbedded + "' are not in embedded topic list");
 		}
-		final AtomicReference<@Nullable Collection<TopicPartition>> assigned = new AtomicReference<>();
+		final AtomicReference<Collection<TopicPartition>> assigned = new AtomicReference<>();
 		consumer.subscribe(Arrays.asList(topicsToConsume), new ConsumerRebalanceListener() {
 
 			@Override
@@ -581,19 +580,18 @@ public class EmbeddedKafkaKraftBroker implements EmbeddedKafkaBroker {
 		while (assigned.get() == null && n++ < 600) { // NOSONAR magic #
 			consumer.poll(Duration.ofMillis(100)); // force assignment NOSONAR magic #
 		}
-		Collection<TopicPartition> topicPartitions = assigned.get();
-		if (topicPartitions != null) {
+		if (assigned.get() != null) {
 			LOGGER.debug(() -> "Partitions assigned "
-					+ topicPartitions
+					+ assigned.get()
 					+ "; re-seeking to "
 					+ (seekToEnd ? "end; " : "beginning"));
 			if (seekToEnd) {
-				consumer.seekToEnd(topicPartitions);
+				consumer.seekToEnd(assigned.get());
 				// seekToEnd is asynchronous. query the position to force the seek to happen now.
-				topicPartitions.forEach(consumer::position);
+				assigned.get().forEach(consumer::position);
 			}
 			else {
-				consumer.seekToBeginning(topicPartitions);
+				consumer.seekToBeginning(assigned.get());
 			}
 		}
 		else {

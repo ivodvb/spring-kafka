@@ -115,7 +115,7 @@ public class PartitionResolverTests {
 
 		@Bean
 		ConsumerFactory<Integer, String> cf(EmbeddedKafkaBroker broker) {
-			Map<String, Object> props = KafkaTestUtils.consumerProps(broker, "prt", false);
+			Map<String, Object> props = KafkaTestUtils.consumerProps("prt", "false", broker);
 			return new DefaultKafkaConsumerFactory<>(props);
 		}
 

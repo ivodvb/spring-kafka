@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.kafka.test;
+package org.springframework.kafka.test.rule;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -57,19 +58,21 @@ public class AddressableEmbeddedBrokerTests {
 	private Config config;
 
 	@Autowired
-	private EmbeddedKafkaKraftBroker broker;
+	private EmbeddedKafkaZKBroker broker;
 
 	@Test
 	public void testKafkaEmbedded() {
-		//TODO: Static port assignments in KRAFT mode in KafkaClusterTestKit
-//		assertThat(broker.getBrokersAsString()).isEqualTo("localhost:" + this.config.kafkaPort);
+		assertThat(broker.getBrokersAsString()).isEqualTo("127.0.0.1:" + this.config.kafkaPort);
+		assertThat(broker.getZkPort()).isEqualTo(this.config.zkPort);
 		assertThat(broker.getBrokersAsString())
-				.isEqualTo(System.getProperty(EmbeddedKafkaKraftBroker.SPRING_EMBEDDED_KAFKA_BROKERS));
+				.isEqualTo(System.getProperty(EmbeddedKafkaZKBroker.SPRING_EMBEDDED_KAFKA_BROKERS));
+		assertThat(broker.getZookeeperConnectionString())
+				.isEqualTo(System.getProperty(EmbeddedKafkaZKBroker.SPRING_EMBEDDED_ZOOKEEPER_CONNECT));
 	}
 
 	@Test
 	public void testLateStartedConsumer() {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.broker, TEST_EMBEDDED, false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(TEST_EMBEDDED, "false", this.broker);
 		Consumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
 		this.broker.consumeFromAnEmbeddedTopic(consumer, TEST_EMBEDDED);
 
@@ -78,7 +81,7 @@ public class AddressableEmbeddedBrokerTests {
 		producer.close();
 		KafkaTestUtils.getSingleRecord(consumer, TEST_EMBEDDED);
 
-		consumerProps = KafkaTestUtils.consumerProps(this.broker, "another" + TEST_EMBEDDED, false);
+		consumerProps = KafkaTestUtils.consumerProps("another" + TEST_EMBEDDED, "false", this.broker);
 		Consumer<Integer, String> consumer2 = new KafkaConsumer<>(consumerProps);
 		this.broker.consumeFromAnEmbeddedTopic(consumer2, TEST_EMBEDDED);
 		KafkaTestUtils.getSingleRecord(consumer2, TEST_EMBEDDED);
@@ -92,17 +95,20 @@ public class AddressableEmbeddedBrokerTests {
 
 		private int kafkaPort;
 
+		private int zkPort;
+
 		@Bean
-		public EmbeddedKafkaKraftBroker broker() throws IOException {
+		public EmbeddedKafkaZKBroker broker() throws IOException {
 			ServerSocket ss = ServerSocketFactory.getDefault().createServerSocket(0);
 			this.kafkaPort = ss.getLocalPort();
 			ss.close();
-			EmbeddedKafkaKraftBroker kafka = new EmbeddedKafkaKraftBroker(1, 1, "topic1", TEST_EMBEDDED);
-			kafka.kafkaPorts(this.kafkaPort);
-			kafka.afterPropertiesSet();
+			ss = ServerSocketFactory.getDefault().createServerSocket(0);
+			this.zkPort = ss.getLocalPort();
+			ss.close();
 
-
-			return kafka;
+			return new EmbeddedKafkaZKBroker(1, true, TEST_EMBEDDED)
+					.zkPort(this.zkPort)
+					.kafkaPorts(this.kafkaPort);
 		}
 
 	}

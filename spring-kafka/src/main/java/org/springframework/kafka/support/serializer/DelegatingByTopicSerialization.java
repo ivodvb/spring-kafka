@@ -26,10 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.LogFactory;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -84,7 +84,7 @@ public abstract class DelegatingByTopicSerialization<T extends Closeable> implem
 
 	private final Set<String> patterns = ConcurrentHashMap.newKeySet();
 
-	private @Nullable T defaultDelegate;
+	private T defaultDelegate;
 
 	private boolean forKeys;
 
@@ -93,7 +93,7 @@ public abstract class DelegatingByTopicSerialization<T extends Closeable> implem
 	public DelegatingByTopicSerialization() {
 	}
 
-	public DelegatingByTopicSerialization(Map<Pattern, T> delegates, @Nullable T defaultDelegate) {
+	public DelegatingByTopicSerialization(Map<Pattern, T> delegates, T defaultDelegate) {
 		Assert.notNull(delegates, "'delegates' cannot be null");
 		Assert.notNull(defaultDelegate, "'defaultDelegate' cannot be null");
 		this.delegates.putAll(delegates);
@@ -260,7 +260,7 @@ public abstract class DelegatingByTopicSerialization<T extends Closeable> implem
 		}
 	}
 
-	protected @Nullable T instantiateAndConfigure(Map<String, ?> configs, boolean isKey, Map<Pattern, T> delegates2,
+	protected T instantiateAndConfigure(Map<String, ?> configs, boolean isKey, Map<Pattern, T> delegates2,
 			@Nullable Pattern pattern, Class<?> clazz) {
 
 		if (pattern != null && !this.patterns.add(pattern.pattern())) {

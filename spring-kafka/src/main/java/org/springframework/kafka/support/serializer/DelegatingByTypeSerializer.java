@@ -102,7 +102,6 @@ public class DelegatingByTypeSerializer implements Serializer<Object> {
 		this.delegates.values().forEach(del -> del.configure(configs, isKey));
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	@Override
 	public byte[] serialize(String topic, Object data) {
 		if (data == null) {
@@ -112,7 +111,6 @@ public class DelegatingByTypeSerializer implements Serializer<Object> {
 		return delegate.serialize(topic, data);
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	@Override
 	public byte[] serialize(String topic, Headers headers, Object data) {
 		if (data == null) {

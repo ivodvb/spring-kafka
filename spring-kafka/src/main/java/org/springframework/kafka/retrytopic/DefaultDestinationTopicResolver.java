@@ -29,8 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -40,6 +38,7 @@ import org.springframework.kafka.listener.ExceptionClassifier;
 import org.springframework.kafka.listener.ListenerExecutionFailedException;
 import org.springframework.kafka.listener.TimestampedException;
 import org.springframework.kafka.retrytopic.DestinationTopic.Type;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -71,7 +70,6 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 
 	private final Clock clock;
 
-	@SuppressWarnings("NullAway.Init")
 	private ApplicationContext applicationContext;
 
 	private boolean contextRefreshed;
@@ -104,17 +102,16 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 				? handleDltProcessingFailure(destinationTopicHolder, e)
 				: destinationTopicHolder.getSourceDestination().shouldRetryOn(attempt, maybeUnwrapException(e))
 						&& isNotFatalException(e)
-						&& !isPastTimeout(originalTimestamp, destinationTopicHolder)
+						&& !isPastTimout(originalTimestamp, destinationTopicHolder)
 					? resolveRetryDestination(mainListenerId, destinationTopicHolder, e)
 					: getDltOrNoOpsDestination(mainListenerId, topic, e);
 	}
 
 	private Boolean isNotFatalException(Exception e) {
-		return getExceptionMatcher().match(e);
+		return getClassifier().classify(e);
 	}
 
-	private Throwable maybeUnwrapException(@Nullable Throwable e) {
-		Assert.state(e != null, "Exception cannot be null");
+	private Throwable maybeUnwrapException(Throwable e) {
 		return FRAMEWORK_EXCEPTIONS
 				.stream()
 				.filter(frameworkException -> frameworkException.isAssignableFrom(e.getClass()))
@@ -123,7 +120,7 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 				.orElse(e);
 	}
 
-	private boolean isPastTimeout(long originalTimestamp, DestinationTopicHolder destinationTopicHolder) {
+	private boolean isPastTimout(long originalTimestamp, DestinationTopicHolder destinationTopicHolder) {
 		long timeout = destinationTopicHolder.getNextDestination().getDestinationTimeout();
 		return timeout != RetryTopicConstants.NOT_SET &&
 				Instant.now(this.clock).toEpochMilli() > originalTimestamp + timeout;
@@ -163,21 +160,21 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 
 	@Nullable
 	@Override
-	public DestinationTopic getDltFor(String mainListenerId, String topicName, @Nullable Exception e) {
+	public DestinationTopic getDltFor(String mainListenerId, String topicName, Exception e) {
 		DestinationTopic destination = getDltOrNoOpsDestination(mainListenerId, topicName, e);
 		return destination.isNoOpsTopic()
 				? null
 				: destination;
 	}
 
-	private DestinationTopic getDltOrNoOpsDestination(String mainListenerId, @Nullable String topic, @Nullable Exception e) {
+	private DestinationTopic getDltOrNoOpsDestination(String mainListenerId, String topic, Exception e) {
 		DestinationTopic destination = getNextDestinationTopicFor(mainListenerId, topic);
 		return isMatchingDltTopic(destination, e) || destination.isNoOpsTopic() ?
 			destination :
 			getDltOrNoOpsDestination(mainListenerId, destination.getDestinationName(), e);
 	}
 
-	private static boolean isMatchingDltTopic(DestinationTopic destination, @Nullable Exception e) {
+	private static boolean isMatchingDltTopic(DestinationTopic destination, Exception e) {
 		if (!destination.isDltTopic()) {
 			return false;
 		}
@@ -188,7 +185,7 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 		return isDltIntendedForCurrentExc || isGenericPurposeDlt;
 	}
 
-	private static boolean isDirectExcOrCause(@Nullable Exception e, Class<? extends Throwable> excType) {
+	private static boolean isDirectExcOrCause(Exception e, Class<? extends Throwable> excType) {
 		if (e == null) {
 			return false;
 		}
@@ -208,17 +205,17 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 	}
 
 	@Override
-	public DestinationTopic getNextDestinationTopicFor(String mainListenerId, @Nullable String topic) {
+	public DestinationTopic getNextDestinationTopicFor(String mainListenerId, String topic) {
 		return getDestinationHolderFor(mainListenerId, topic).getNextDestination();
 	}
 
-	private DestinationTopicHolder getDestinationHolderFor(String mainListenerId, @Nullable String topic) {
+	private DestinationTopicHolder getDestinationHolderFor(String mainListenerId, String topic) {
 		return this.contextRefreshed
 				? doGetDestinationFor(mainListenerId, topic)
 				: getDestinationTopicSynchronized(mainListenerId, topic);
 	}
 
-	private DestinationTopicHolder getDestinationTopicSynchronized(String mainListenerId, @Nullable String topic) {
+	private DestinationTopicHolder getDestinationTopicSynchronized(String mainListenerId, String topic) {
 		try {
 			this.sourceDestinationsHolderLock.lock();
 			return doGetDestinationFor(mainListenerId, topic);
@@ -228,7 +225,7 @@ public class DefaultDestinationTopicResolver extends ExceptionClassifier
 		}
 	}
 
-	private DestinationTopicHolder doGetDestinationFor(String mainListenerId, @Nullable String topic) {
+	private DestinationTopicHolder doGetDestinationFor(String mainListenerId, String topic) {
 		Map<String, DestinationTopicHolder> map = this.sourceDestinationsHolderMap.get(mainListenerId);
 		Assert.notNull(map, () -> "No destination resolution information for listener " + mainListenerId);
 		return Objects.requireNonNull(map.get(topic),

@@ -16,8 +16,7 @@
 
 package org.springframework.kafka.listener;
 
-import org.jspecify.annotations.Nullable;
-
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**

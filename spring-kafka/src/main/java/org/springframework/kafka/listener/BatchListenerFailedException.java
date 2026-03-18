@@ -16,12 +16,10 @@
 
 package org.springframework.kafka.listener;
 
-import java.io.Serial;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.KafkaException;
+import org.springframework.lang.Nullable;
 
 /**
  * An exception thrown by user code to inform the framework which record in a batch has
@@ -34,12 +32,11 @@ import org.springframework.kafka.KafkaException;
  */
 public class BatchListenerFailedException extends KafkaException {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private final int index;
 
-	private transient @Nullable ConsumerRecord<?, ?> record;
+	private transient ConsumerRecord<?, ?> record;
 
 	/**
 	 * Construct an instance with the provided properties.

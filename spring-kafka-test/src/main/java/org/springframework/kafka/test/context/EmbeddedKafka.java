@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.test.context.aot.DisabledInAotMode;
 
@@ -43,7 +44,7 @@ import org.springframework.test.context.aot.DisabledInAotMode;
  * <p>
  * The typical usage of this annotation is like:
  * <pre class="code">
- * &#064;SpringJUnitConfig
+ * &#064;RunWith(SpringRunner.class)
  * &#064;EmbeddedKafka
  * public class MyKafkaTests {
  *
@@ -67,7 +68,6 @@ import org.springframework.test.context.aot.DisabledInAotMode;
  * @author Pawel Lozinski
  * @author Adrian Chlebosz
  * @author Soby Chacko
- * @author Sanghyeok An
  *
  * @since 1.3
  *
@@ -107,6 +107,14 @@ public @interface EmbeddedKafka {
 	 * @since 2.2.4
 	 */
 	int[] ports() default { 0 };
+
+	/**
+	 * Set the port on which the embedded Zookeeper should listen.
+	 * This property is not valid when using KRaft mode.
+	 * @return the port.
+	 * @since 2.3
+	 */
+	int zookeeperPort() default 0;
 
 	/**
 	 * @return partitions per topic
@@ -163,10 +171,34 @@ public @interface EmbeddedKafka {
 	String bootstrapServersProperty() default "spring.kafka.bootstrap-servers";
 
 	/**
+	 * Timeout for internal ZK client connection.
+	 * This property is not valid when using KRaft mode.
+	 * @return default {@link EmbeddedKafkaZKBroker#DEFAULT_ZK_CONNECTION_TIMEOUT}.
+	 * @since 2.4
+	 */
+	int zkConnectionTimeout() default EmbeddedKafkaZKBroker.DEFAULT_ZK_CONNECTION_TIMEOUT;
+
+	/**
+	 * Timeout for internal ZK client session.
+	 * This property is not valid when using KRaft mode.
+	 * @return default {@link EmbeddedKafkaZKBroker#DEFAULT_ZK_SESSION_TIMEOUT}.
+	 * @since 2.4
+	 */
+	int zkSessionTimeout() default EmbeddedKafkaZKBroker.DEFAULT_ZK_SESSION_TIMEOUT;
+
+	/**
 	 * Timeout in seconds for admin operations (e.g. topic creation, close).
 	 * @return default {@link EmbeddedKafkaBroker#DEFAULT_ADMIN_TIMEOUT}
 	 * @since 2.8.5
 	 */
 	int adminTimeout() default EmbeddedKafkaBroker.DEFAULT_ADMIN_TIMEOUT;
 
+	/**
+	 * Use KRaft instead of Zookeeper; default false.
+	 * @return whether to use KRaft.
+	 * @since 3.6
+	 */
+	boolean kraft() default false;
+
 }
+

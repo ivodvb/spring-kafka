@@ -26,7 +26,6 @@ import java.util.function.Function;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.utils.Utils;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.util.Assert;
 
@@ -106,7 +105,7 @@ public class ParseStringDeserializer<T> implements Deserializer<T> {
 	}
 
 	@Override
-	public T deserialize(String topic, @Nullable Headers headers, byte[] data) {
+	public T deserialize(String topic, Headers headers, byte[] data) {
 		return this.parser.apply(data == null ? null : new String(data, this.charset), headers);
 	}
 
@@ -116,7 +115,7 @@ public class ParseStringDeserializer<T> implements Deserializer<T> {
 		return this.parser.apply(value, headers);
 	}
 
-	private @Nullable String deserialize(@Nullable ByteBuffer data) {
+	private String deserialize(ByteBuffer data) {
 		if (data == null) {
 			return null;
 		}

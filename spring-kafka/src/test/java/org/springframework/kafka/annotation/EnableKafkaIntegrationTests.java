@@ -63,9 +63,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.awaitility.Awaitility;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.aop.framework.ProxyFactory;
@@ -124,25 +121,26 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
-import org.springframework.kafka.support.converter.JacksonJsonMessageConverter;
-import org.springframework.kafka.support.converter.JacksonProjectingMessageConverter;
+import org.springframework.kafka.support.converter.JsonMessageConverter;
+import org.springframework.kafka.support.converter.ProjectingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
-import org.springframework.kafka.support.converter.StringJacksonJsonMessageConverter;
-import org.springframework.kafka.support.mapping.DefaultJacksonJavaTypeMapper;
-import org.springframework.kafka.support.mapping.JacksonJavaTypeMapper;
-import org.springframework.kafka.support.mapping.JacksonJavaTypeMapper.TypePrecedence;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.converter.StringJsonMessageConverter;
+import org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper.TypePrecedence;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
@@ -183,7 +181,6 @@ import static org.mockito.Mockito.spy;
  * @author Soby Chacko
  * @author Wang Zhiyang
  * @author Borahm Lee
- * @author Sean Sullivan
  */
 @SpringJUnitConfig
 @DirtiesContext
@@ -199,7 +196,7 @@ import static org.mockito.Mockito.spy;
 		"annotated29", "annotated30", "annotated30reply", "annotated31", "annotated32", "annotated33",
 		"annotated34", "annotated35", "annotated36", "annotated37", "foo", "manualStart", "seekOnIdle",
 		"annotated38", "annotated38reply", "annotated39", "annotated40", "annotated41", "annotated42",
-		"annotated43", "annotated43reply", "seekToComputeFn", "headerMapTopic"})
+		"annotated43", "annotated43reply", "seekToComputeFn"}, kraft = true)
 @TestPropertySource(properties = "spel.props=fetch.min.bytes=420000,max.poll.records=10")
 public class EnableKafkaIntegrationTests {
 
@@ -244,9 +241,6 @@ public class EnableKafkaIntegrationTests {
 
 	@Autowired
 	public MultiJsonListenerBean multiJsonListener;
-
-	@Autowired
-	public HeaderMapListenerBean headerMapListener;
 
 	@Autowired
 	public MultiListenerNoDefault multiNoDefault;
@@ -591,50 +585,6 @@ public class EnableKafkaIntegrationTests {
 	}
 
 	@Test
-	public void testHeadersAnnotation() throws Exception {
-		template.setDefaultTopic("headerMapTopic");
-
-		template.send(new GenericMessage<>("message1", Collections.emptyMap()));
-		Awaitility.await().untilAsserted(() -> {
-			assertThat(this.headerMapListener.invocationCount.get()).isEqualTo(1);
-		});
-		assertThat(this.headerMapListener.text).isEqualTo("message1");
-		assertThat(this.headerMapListener.headers)
-				.isNotNull()
-				.containsOnlyKeys(
-					"kafka_offset",
-					"kafka_consumer",
-					"kafka_timestampType",
-					"kafka_receivedPartitionId",
-					"kafka_receivedTopic",
-					"kafka_receivedTimestamp",
-					"kafka_groupId");
-
-		template.send(new GenericMessage<>("message2",
-				Map.of("akey", "avalue",
-						"bkey", "bvalue")));
-		Awaitility.await().untilAsserted(() -> {
-			assertThat(this.headerMapListener.invocationCount.get()).isEqualTo(2);
-		});
-		assertThat(this.headerMapListener.text).isEqualTo("message2");
-		assertThat(this.headerMapListener.headers)
-				.isNotNull()
-				.containsOnlyKeys(
-					"kafka_offset",
-					"kafka_consumer",
-					"kafka_timestampType",
-					"kafka_receivedPartitionId",
-					"kafka_receivedTopic",
-					"kafka_receivedTimestamp",
-					"kafka_groupId",
-					"akey",
-					"bkey")
-				.contains(
-					Map.entry("akey", "avalue"),
-					Map.entry("bkey", "bvalue"));
-	}
-
-	@Test
 	public void testMultiValidateNoDefaultHandler() throws Exception {
 		this.kafkaJsonTemplate.setDefaultTopic("annotated40");
 		this.kafkaJsonTemplate.send(new GenericMessage<>(new ValidatedClass(5)));
@@ -681,10 +631,10 @@ public class EnableKafkaIntegrationTests {
 		ConcurrentMessageListenerContainer<?, ?> container =
 				(ConcurrentMessageListenerContainer<?, ?>) registry.getListenerContainer("jsonHeaders");
 		Object messageListener = container.getContainerProperties().getMessageListener();
-		DefaultJacksonJavaTypeMapper typeMapper = KafkaTestUtils.getPropertyValue(messageListener,
-				"messageConverter.typeMapper", DefaultJacksonJavaTypeMapper.class);
+		DefaultJackson2JavaTypeMapper typeMapper = KafkaTestUtils.getPropertyValue(messageListener,
+				"messageConverter.typeMapper", DefaultJackson2JavaTypeMapper.class);
 		try {
-			typeMapper.setTypePrecedence(JacksonJavaTypeMapper.TypePrecedence.TYPE_ID);
+			typeMapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID);
 			assertThat(container).isNotNull();
 			Foo foo = new Foo("bar");
 			this.kafkaJsonTemplate.send(MessageBuilder.withPayload(foo)
@@ -696,7 +646,7 @@ public class EnableKafkaIntegrationTests {
 			assertThat(this.listener.foo.getBar()).isEqualTo("bar");
 		}
 		finally {
-			typeMapper.setTypePrecedence(JacksonJavaTypeMapper.TypePrecedence.INFERRED);
+			typeMapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
 		}
 	}
 
@@ -1140,7 +1090,7 @@ public class EnableKafkaIntegrationTests {
 	public void testReplyingBatchListenerReturnCollection() {
 		Map<String, Object> consumerProps = new HashMap<>(this.consumerFactory.getConfigurationProperties());
 		consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "testReplyingBatchListenerReturnCollection");
-		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 		ConsumerFactory<Integer, Object> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		Consumer<Integer, Object> consumer = cf.createConsumer();
 		this.embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "annotated38reply");
@@ -1171,7 +1121,7 @@ public class EnableKafkaIntegrationTests {
 	}
 
 	@Test
-	public void testCustomMethodArgumentResolverListener() throws InterruptedException {
+	public void testCustomMethodArgumentResovlerListener() throws InterruptedException {
 		template.send("annotated39", "foo");
 		assertThat(this.listener.customMethodArgumentResolverLatch.await(30, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.listener.customMethodArgument.body).isEqualTo("foo");
@@ -1298,8 +1248,8 @@ public class EnableKafkaIntegrationTests {
 			factory.setRecordMessageConverter(new RecordMessageConverter() {
 
 				@Override
-				public Message<?> toMessage(ConsumerRecord<?, ?> record, @Nullable Object acknowledgment,
-						@Nullable Object consumer, @Nullable Type payloadType) {
+				public Message<?> toMessage(ConsumerRecord<?, ?> record, Acknowledgment acknowledgment,
+						Consumer<?, ?> consumer, Type payloadType) {
 
 					throw new UnsupportedOperationException();
 				}
@@ -1338,8 +1288,8 @@ public class EnableKafkaIntegrationTests {
 			ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
 					new ConcurrentKafkaListenerContainerFactory<>();
 			factory.setConsumerFactory(consumerFactory());
-			JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
-			DefaultJacksonJavaTypeMapper typeMapper = new DefaultJacksonJavaTypeMapper();
+			JsonMessageConverter converter = new JsonMessageConverter();
+			DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
 			typeMapper.addTrustedPackages("*");
 			converter.setTypeMapper(typeMapper);
 			factory.setRecordMessageConverter(converter);
@@ -1354,8 +1304,8 @@ public class EnableKafkaIntegrationTests {
 			ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
 					new ConcurrentKafkaListenerContainerFactory<>();
 			factory.setConsumerFactory(consumerFactory());
-			JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
-			DefaultJacksonJavaTypeMapper typeMapper = new DefaultJacksonJavaTypeMapper();
+			JsonMessageConverter converter = new JsonMessageConverter();
+			DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
 			typeMapper.addTrustedPackages("*");
 			typeMapper.setTypePrecedence(TypePrecedence.TYPE_ID);
 			converter.setTypeMapper(typeMapper);
@@ -1368,11 +1318,11 @@ public class EnableKafkaIntegrationTests {
 			ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
 					new ConcurrentKafkaListenerContainerFactory<>();
 			factory.setConsumerFactory(consumerFactory());
-			JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
-			DefaultJacksonJavaTypeMapper typeMapper = new DefaultJacksonJavaTypeMapper();
+			JsonMessageConverter converter = new JsonMessageConverter();
+			DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
 			typeMapper.addTrustedPackages("*");
 			converter.setTypeMapper(typeMapper);
-			factory.setRecordMessageConverter(new JacksonProjectingMessageConverter(converter));
+			factory.setRecordMessageConverter(new ProjectingMessageConverter(converter));
 			factory.setChangeConsumerThreadName(true);
 			factory.setThreadNameSupplier(container -> "foo." + container.getListenerId());
 			return factory;
@@ -1555,7 +1505,7 @@ public class EnableKafkaIntegrationTests {
 
 		@Bean
 		public Map<String, Object> consumerConfigs() {
-			return KafkaTestUtils.consumerProps(this.embeddedKafka, DEFAULT_TEST_GROUP_ID, false);
+			return KafkaTestUtils.consumerProps(DEFAULT_TEST_GROUP_ID, "false", this.embeddedKafka);
 		}
 
 		@Bean
@@ -1596,11 +1546,6 @@ public class EnableKafkaIntegrationTests {
 		}
 
 		@Bean
-		public HeaderMapListenerBean headerMapListener() {
-			return new HeaderMapListenerBean();
-		}
-
-		@Bean
 		public MultiListenerNoDefault multiNoDefault() {
 			return new MultiListenerNoDefault();
 		}
@@ -1618,7 +1563,7 @@ public class EnableKafkaIntegrationTests {
 		@Bean
 		public ProducerFactory<Integer, Object> jsonProducerFactory() {
 			Map<String, Object> producerConfigs = producerConfigs();
-			producerConfigs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+			producerConfigs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 			return new DefaultKafkaProducerFactory<>(producerConfigs);
 		}
 
@@ -1687,7 +1632,7 @@ public class EnableKafkaIntegrationTests {
 		@Bean
 		public KafkaTemplate<Integer, String> kafkaJsonTemplate() {
 			KafkaTemplate<Integer, String> kafkaTemplate = new KafkaTemplate<>(producerFactory());
-			kafkaTemplate.setMessageConverter(new StringJacksonJsonMessageConverter());
+			kafkaTemplate.setMessageConverter(new StringJsonMessageConverter());
 			kafkaTemplate.setMicrometerTags(Collections.singletonMap("extraTag", "bar"));
 			kafkaTemplate.setMicrometerTagsProvider(pr -> Map.of("topic", pr.topic()));
 			return kafkaTemplate;
@@ -1932,7 +1877,8 @@ public class EnableKafkaIntegrationTests {
 				}
 
 				@Override
-				protected @Nullable Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+				@Nullable
+				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 						@Nullable Object conversionHint) {
 
 					return payload instanceof Foo ? ((Foo) payload).getBar() : null;
@@ -2516,9 +2462,7 @@ public class EnableKafkaIntegrationTests {
 		}
 
 		@KafkaListener(id = "customMethodArgumentResolver", topics = "annotated39")
-		public void customMethodArgumentResolverListener(CustomMethodArgument customMethodArgument,
-				@Payload String data) {
-
+		public void customMethodArgumentResolverListener(String data, CustomMethodArgument customMethodArgument) {
 			this.customMethodArgument = customMethodArgument;
 			this.customMethodArgumentResolverLatch.countDown();
 		}
@@ -2795,24 +2739,6 @@ public class EnableKafkaIntegrationTests {
 		public void defaultHandler(Bar bar) {
 			this.bar = bar;
 			this.latch3.countDown();
-		}
-
-	}
-
-	@KafkaListener(id = "headerMap", topics = "headerMapTopic")
-	static class HeaderMapListenerBean {
-
-		final AtomicInteger invocationCount = new AtomicInteger();
-
-		private String text;
-
-		private Map<String, Object> headers;
-
-		@KafkaHandler(isDefault = true)
-		public void defaultHandler(@Payload String text, @Headers Map<String, Object> headers) {
-			this.text = text;
-			this.headers = headers;
-			this.invocationCount.incrementAndGet();
 		}
 
 	}

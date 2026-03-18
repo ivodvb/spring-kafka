@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -59,6 +60,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
@@ -197,7 +199,7 @@ public class DefaultErrorHandlerNoSeeksBatchListenerTests {
 				this.pollLatch.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					default:
 						try {
 							Thread.sleep(50);
@@ -205,7 +207,7 @@ public class DefaultErrorHandlerNoSeeksBatchListenerTests {
 						catch (InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(any());
 			willAnswer(i -> {
@@ -216,6 +218,7 @@ public class DefaultErrorHandlerNoSeeksBatchListenerTests {
 				this.closeLatch.countDown();
 				return null;
 			}).given(consumer).close();
+			willReturn(new ConsumerGroupMetadata(CONTAINER_ID)).given(consumer).groupMetadata();
 			return consumer;
 		}
 
@@ -234,9 +237,9 @@ public class DefaultErrorHandlerNoSeeksBatchListenerTests {
 				this.pollLatch2.countDown();
 				switch (which.getAndIncrement()) {
 					case 0:
-						return new ConsumerRecords(records1, Map.of());
+						return new ConsumerRecords(records1);
 					case 3:  // after backoff
-						return new ConsumerRecords(records2, Map.of());
+						return new ConsumerRecords(records2);
 					default:
 						try {
 							Thread.sleep(0);
@@ -244,9 +247,10 @@ public class DefaultErrorHandlerNoSeeksBatchListenerTests {
 						catch (InterruptedException e) {
 							Thread.currentThread().interrupt();
 						}
-						return new ConsumerRecords(Collections.emptyMap(), Map.of());
+						return new ConsumerRecords(Collections.emptyMap());
 				}
 			}).given(consumer).poll(any());
+			willReturn(new ConsumerGroupMetadata(CONTAINER_ID_2)).given(consumer).groupMetadata();
 			return consumer;
 		}
 

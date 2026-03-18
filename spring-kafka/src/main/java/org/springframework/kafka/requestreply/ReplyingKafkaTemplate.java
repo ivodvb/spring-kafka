@@ -36,7 +36,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -57,6 +56,7 @@ import org.springframework.kafka.support.micrometer.KafkaListenerObservation;
 import org.springframework.kafka.support.micrometer.KafkaRecordReceiverContext;
 import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.kafka.support.serializer.SerializationUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -73,7 +73,6 @@ import org.springframework.util.Assert;
  * @author Artem Bilan
  * @author Borahm Lee
  * @author Francois Rosiere
- * @author Mikhail Polivakha
  *
  * @since 2.1.3
  *
@@ -118,7 +117,7 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 
 	private String replyPartitionHeaderName = KafkaHeaders.REPLY_PARTITION;
 
-	private Function<ConsumerRecord<?, ?>, @Nullable Exception> replyErrorChecker = rec -> null;
+	private Function<ConsumerRecord<?, ?>, Exception> replyErrorChecker = rec -> null;
 
 	private CountDownLatch assignLatch = new CountDownLatch(1);
 
@@ -132,7 +131,6 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 		this(producerFactory, replyContainer, false);
 	}
 
-	@SuppressWarnings({"NullAway", "this-escape"}) // Dataflow analysis limitation
 	public ReplyingKafkaTemplate(ProducerFactory<K, V> producerFactory,
 			GenericMessageListenerContainer<K, R> replyContainer, boolean autoFlush) {
 
@@ -224,7 +222,7 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 	 * Return the topics/partitions assigned to the replying listener container.
 	 * @return the topics/partitions.
 	 */
-	public @Nullable Collection<TopicPartition> getAssignedReplyTopicPartitions() {
+	public Collection<TopicPartition> getAssignedReplyTopicPartitions() {
 		return this.replyContainer.getAssignedPartitions();
 	}
 
@@ -296,7 +294,7 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 	 * @param replyErrorChecker the error checker function.
 	 * @since 2.6.7
 	 */
-	public void setReplyErrorChecker(Function<ConsumerRecord<?, ?>, @Nullable Exception> replyErrorChecker) {
+	public void setReplyErrorChecker(Function<ConsumerRecord<?, ?>, Exception> replyErrorChecker) {
 		Assert.notNull(replyErrorChecker, "'replyErrorChecker' cannot be null");
 		this.replyErrorChecker = replyErrorChecker;
 	}
@@ -369,7 +367,7 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 	}
 
 	@Override
-	public RequestReplyMessageFuture<K, V> sendAndReceive(Message<?> message, @Nullable Duration replyTimeout) {
+	public RequestReplyMessageFuture<K, V> sendAndReceive(Message<?> message, Duration replyTimeout) {
 		return sendAndReceive(message, replyTimeout, null);
 	}
 
@@ -423,13 +421,12 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 		CorrelationKey correlationId = this.correlationStrategy.apply(record);
 		Assert.notNull(correlationId, "the created 'correlationId' cannot be null");
 		Headers headers = record.headers();
-		boolean hasReplyTopic = headers.lastHeader(this.replyTopicHeaderName) != null;
+		boolean hasReplyTopic = headers.lastHeader(KafkaHeaders.REPLY_TOPIC) != null;
 		if (!hasReplyTopic && this.replyTopic != null) {
 			headers.add(new RecordHeader(this.replyTopicHeaderName, this.replyTopic));
-		}
-		boolean hasReplyPartition = headers.lastHeader(this.replyPartitionHeaderName) != null;
-		if (!hasReplyPartition && this.replyPartition != null) {
-			headers.add(new RecordHeader(this.replyPartitionHeaderName, this.replyPartition));
+			if (this.replyPartition != null) {
+				headers.add(new RecordHeader(this.replyPartitionHeaderName, this.replyPartition));
+			}
 		}
 		Object correlation = this.binaryCorrelation ? correlationId : correlationId.toString();
 		byte[] correlationValue = this.binaryCorrelation
@@ -577,8 +574,8 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 	 * deserialization; null otherwise. If you need to determine whether it was the key or
 	 * value, call
 	 * {@link SerializationUtils#getExceptionFromHeader(ConsumerRecord, String, LogAccessor)}
-	 * with {@link KafkaUtils#KEY_DESERIALIZER_EXCEPTION_HEADER} and
-	 * {@link KafkaUtils#VALUE_DESERIALIZER_EXCEPTION_HEADER} instead.
+	 * with {@link SerializationUtils#KEY_DESERIALIZER_EXCEPTION_HEADER} and
+	 * {@link SerializationUtils#VALUE_DESERIALIZER_EXCEPTION_HEADER} instead.
 	 * @param record the record.
 	 * @param logger a {@link LogAccessor}.
 	 * @return the {@link DeserializationException} or {@code null}.
@@ -587,14 +584,14 @@ public class ReplyingKafkaTemplate<K, V, R> extends KafkaTemplate<K, V> implemen
 	@Nullable
 	public static DeserializationException checkDeserialization(ConsumerRecord<?, ?> record, LogAccessor logger) {
 		DeserializationException exception = SerializationUtils.getExceptionFromHeader(record,
-				KafkaUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER, logger);
+				SerializationUtils.VALUE_DESERIALIZER_EXCEPTION_HEADER, logger);
 		if (exception != null) {
 			logger.error(exception, () -> "Reply value deserialization failed for " + record.topic() + "-"
 					+ record.partition() + "@" + record.offset());
 			return exception;
 		}
 		exception = SerializationUtils.getExceptionFromHeader(record,
-				KafkaUtils.KEY_DESERIALIZER_EXCEPTION_HEADER, logger);
+				SerializationUtils.KEY_DESERIALIZER_EXCEPTION_HEADER, logger);
 		if (exception != null) {
 			logger.error(exception, () -> "Reply key deserialization failed for " + record.topic() + "-"
 					+ record.partition() + "@" + record.offset());

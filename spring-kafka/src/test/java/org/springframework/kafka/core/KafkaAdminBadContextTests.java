@@ -27,7 +27,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
@@ -50,7 +50,7 @@ public class KafkaAdminBadContextTests {
 
 		@Bean
 		public EmbeddedKafkaBroker kafkaEmbedded() {
-			return new EmbeddedKafkaKraftBroker(1, 1);
+			return new EmbeddedKafkaZKBroker(1);
 		}
 
 		@Bean

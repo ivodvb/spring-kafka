@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.header.internals.RecordHeader;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.support.KafkaHeaders;
 
@@ -38,7 +37,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 public class DeliveryAttemptAwareRetryListener implements RetryListener {
 
 	@Override
-	public void failedDelivery(ConsumerRecord<?, ?> record, @Nullable Exception ex, int deliveryAttempt) {
+	public void failedDelivery(ConsumerRecord<?, ?> record, Exception ex, int deliveryAttempt) {
 		// Pass
 	}
 

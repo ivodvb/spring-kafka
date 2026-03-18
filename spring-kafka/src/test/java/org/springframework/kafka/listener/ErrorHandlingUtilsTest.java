@@ -19,7 +19,6 @@ package org.springframework.kafka.listener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -31,9 +30,9 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.support.ExceptionMatcher;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -72,7 +71,7 @@ class ErrorHandlingUtilsTest {
 
 	private final List<RetryListener> retryListeners = new ArrayList<>();
 
-	private final ExceptionMatcher exceptionMatcher = ExceptionMatcher.defaultMatcher();
+	private final BinaryExceptionClassifier classifier = BinaryExceptionClassifier.defaultClassifier();
 
 	private final ConsumerRecords<?, ?> consumerRecords = recordsOf(
 			new ConsumerRecord<>("foo", 0, 0L, "a", "a"),
@@ -85,7 +84,8 @@ class ErrorHandlingUtilsTest {
 		return new ConsumerRecords<>(
 				Arrays.stream(records).collect(Collectors.groupingBy(
 						(cr) -> new TopicPartition(cr.topic(), cr.partition())
-				)), Map.of());
+				))
+		);
 	}
 
 	@BeforeEach
@@ -99,7 +99,7 @@ class ErrorHandlingUtilsTest {
 		ErrorHandlingUtils.retryBatch(
 				thrownException, consumerRecords, consumer, container, listener, backOff,
 				seeker, recoverer, logger, KafkaException.Level.INFO, retryListeners,
-				exceptionMatcher, true
+				classifier, true
 		);
 	}
 

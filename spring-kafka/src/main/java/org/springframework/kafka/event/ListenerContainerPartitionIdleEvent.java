@@ -16,8 +16,6 @@
 
 package org.springframework.kafka.event;
 
-import java.io.Serial;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 
@@ -31,7 +29,6 @@ import org.apache.kafka.common.TopicPartition;
  */
 public class ListenerContainerPartitionIdleEvent extends KafkaEvent {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private final long idleTime;
@@ -42,7 +39,7 @@ public class ListenerContainerPartitionIdleEvent extends KafkaEvent {
 
 	private final boolean paused;
 
-	private transient final Consumer<?, ?> consumer;
+	private transient Consumer<?, ?> consumer;
 
 	/**
 	 * Construct an instance with the provided arguments.

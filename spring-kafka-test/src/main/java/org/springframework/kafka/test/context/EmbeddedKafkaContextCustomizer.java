@@ -16,13 +16,17 @@
 
 package org.springframework.kafka.test.context;
 
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.EmbeddedKafkaBrokerFactory;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.MergedContextConfiguration;
+import org.springframework.util.Assert;
 
 /**
  * The {@link ContextCustomizer} implementation for the {@link EmbeddedKafkaBroker} bean registration.
@@ -47,15 +51,16 @@ class EmbeddedKafkaContextCustomizer implements ContextCustomizer {
 
 	@Override
 	public void customizeContext(ConfigurableApplicationContext context, MergedContextConfiguration mergedConfig) {
+		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
+		Assert.isInstanceOf(DefaultSingletonBeanRegistry.class, beanFactory);
+
 		ConfigurableEnvironment environment = context.getEnvironment();
 
 		EmbeddedKafkaBroker embeddedKafkaBroker =
 				EmbeddedKafkaBrokerFactory.create(this.embeddedKafka, environment::resolvePlaceholders);
 
-		GenericApplicationContext genericApplicationContext = (GenericApplicationContext) context;
-
-		genericApplicationContext.registerBean(EmbeddedKafkaBroker.BEAN_NAME,
-				EmbeddedKafkaBroker.class, () -> embeddedKafkaBroker);
+		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(EmbeddedKafkaBroker.BEAN_NAME,
+				new RootBeanDefinition(EmbeddedKafkaBroker.class, () -> embeddedKafkaBroker));
 	}
 
 	@Override

@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -70,12 +71,12 @@ import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.listener.GenericMessageListenerContainer;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.adapter.ReplyHeadersConfigurer;
-import org.springframework.kafka.support.JsonKafkaHeaderMapper;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SimpleKafkaHeaderMapper;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
-import org.springframework.kafka.support.converter.StringJacksonJsonMessageConverter;
+import org.springframework.kafka.support.converter.StringJsonMessageConverter;
 import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
@@ -101,15 +102,12 @@ import static org.mockito.Mockito.verify;
  * @author Gary Russell
  * @author Nathan Xu
  * @author Soby Chacko
- * @author Mikhail Polivakha
- * @author Ngoc Nhan
  * @since 2.1.3
  *
  */
 @SpringJUnitConfig
 @DirtiesContext
-@EmbeddedKafka(partitions = 5, topics = {
-		ReplyingKafkaTemplateTests.A_REPLY, ReplyingKafkaTemplateTests.A_REQUEST,
+@EmbeddedKafka(partitions = 5, topics = { ReplyingKafkaTemplateTests.A_REPLY, ReplyingKafkaTemplateTests.A_REQUEST,
 		ReplyingKafkaTemplateTests.B_REPLY, ReplyingKafkaTemplateTests.B_REQUEST,
 		ReplyingKafkaTemplateTests.C_REPLY, ReplyingKafkaTemplateTests.C_REQUEST,
 		ReplyingKafkaTemplateTests.D_REPLY, ReplyingKafkaTemplateTests.D_REQUEST,
@@ -121,10 +119,7 @@ import static org.mockito.Mockito.verify;
 		ReplyingKafkaTemplateTests.J_REPLY, ReplyingKafkaTemplateTests.J_REQUEST,
 		ReplyingKafkaTemplateTests.K_REPLY, ReplyingKafkaTemplateTests.K_REQUEST,
 		ReplyingKafkaTemplateTests.L_REPLY, ReplyingKafkaTemplateTests.L_REQUEST,
-		ReplyingKafkaTemplateTests.M_REPLY, ReplyingKafkaTemplateTests.M_REQUEST,
-		ReplyingKafkaTemplateTests.CUSTOM_REPLY_HEADER_REPLY, ReplyingKafkaTemplateTests.CUSTOM_REPLY_HEADER_REQUEST,
-		ReplyingKafkaTemplateTests.CUSTOM_REPLY_HEADER_WITH_PARTITION_REPLY, ReplyingKafkaTemplateTests.CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST
-})
+		ReplyingKafkaTemplateTests.M_REPLY, ReplyingKafkaTemplateTests.M_REQUEST })
 public class ReplyingKafkaTemplateTests {
 
 	public static final String A_REPLY = "aReply";
@@ -179,14 +174,6 @@ public class ReplyingKafkaTemplateTests {
 
 	public static final String M_REQUEST = "mRequest";
 
-	public static final String CUSTOM_REPLY_HEADER_REPLY = "CUSTOM_REPLY_HEADER_REPLY";
-
-	public static final String CUSTOM_REPLY_HEADER_REQUEST = "CUSTOM_REPLY_HEADER_REQUEST";
-
-	public static final String CUSTOM_REPLY_HEADER_WITH_PARTITION_REPLY = "CUSTOM_REPLY_HEADER_WITH_PARTITION_REPLY";
-
-	public static final String CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST = "CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST";
-
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafka;
 
@@ -217,7 +204,7 @@ public class ReplyingKafkaTemplateTests {
 			assertThat(consumerRecord.value()).isEqualTo("FOO");
 			assertThat(consumerRecord.key()).isEqualTo(1);
 			Map<String, Object> receivedHeaders = new HashMap<>();
-			new JsonKafkaHeaderMapper().toHeaders(consumerRecord.headers(), receivedHeaders);
+			new DefaultKafkaHeaderMapper().toHeaders(consumerRecord.headers(), receivedHeaders);
 			assertThat(receivedHeaders).containsKey("baz");
 			assertThat(receivedHeaders).hasSize(2);
 			assertThat(this.registry.getListenerContainer(A_REQUEST).getContainerProperties().isMissingTopicsFatal())
@@ -238,7 +225,7 @@ public class ReplyingKafkaTemplateTests {
 	public void testGoodWithMessage() throws Exception {
 		ReplyingKafkaTemplate<Integer, String, String> template = createTemplate(A_REPLY);
 		try {
-			template.setMessageConverter(new StringJacksonJsonMessageConverter());
+			template.setMessageConverter(new StringJsonMessageConverter());
 			template.setDefaultReplyTimeout(Duration.ofSeconds(30));
 			RequestReplyMessageFuture<Integer, String> fut = template
 					.sendAndReceive(MessageBuilder.withPayload("foo")
@@ -379,58 +366,6 @@ public class ReplyingKafkaTemplateTests {
 	}
 
 	@Test
-	public void testCustomReplyTopicHeaderIsNotDuplicated() throws Exception {
-		String customReplyHeaderName = "X-Custom-Reply-Header";
-		ReplyingKafkaTemplate<Integer, String, String> template = createTemplate(CUSTOM_REPLY_HEADER_REPLY);
-		template.setReplyTopicHeaderName(customReplyHeaderName);
-		try {
-			Message<String> message = MessageBuilder.withPayload("expected_message")
-					.setHeader(customReplyHeaderName, CUSTOM_REPLY_HEADER_REPLY)
-					.setHeader(KafkaHeaders.TOPIC, CUSTOM_REPLY_HEADER_REQUEST)
-					.build();
-
-			RequestReplyMessageFuture<Integer, String> future = template.sendAndReceive(message, Duration.ofSeconds(30));
-			future.getSendFuture().get(10, TimeUnit.SECONDS); // send ok
-			Message<?> resultingMessage = future.get(30, TimeUnit.SECONDS);
-
-			assertThat(resultingMessage.getPayload()).isEqualTo("OK");
-			assertThat(resultingMessage.getHeaders()).containsEntry("originalPayload", "expected_message");
-		}
-		finally {
-			template.stop();
-			template.destroy();
-		}
-	}
-
-	@Test
-	public void testCustomReplyHeadersAreNotDuplicated() throws Exception {
-		String customReplyTopicHeaderName = "X-Custom-Reply-Header";
-		String customReplyPartitionHeaderName = "X-Custom-Reply-Partition";
-		ReplyingKafkaTemplate<Integer, String, String> template = createTemplate(CUSTOM_REPLY_HEADER_WITH_PARTITION_REPLY);
-		template.setReplyTopicHeaderName(customReplyTopicHeaderName);
-		template.setReplyPartitionHeaderName(customReplyPartitionHeaderName);
-
-		try {
-			Message<String> message = MessageBuilder.withPayload("expected_message")
-					.setHeader(customReplyTopicHeaderName, CUSTOM_REPLY_HEADER_REPLY)
-					.setHeader(customReplyPartitionHeaderName, "test-partition")
-					.setHeader(KafkaHeaders.TOPIC, CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST)
-					.build();
-
-			RequestReplyMessageFuture<Integer, String> future = template.sendAndReceive(message, Duration.ofSeconds(30));
-			future.getSendFuture().get(10, TimeUnit.SECONDS); // send ok
-			Message<?> resultingMessage = future.get(30, TimeUnit.SECONDS);
-
-			assertThat(resultingMessage.getPayload()).isEqualTo("OK");
-			assertThat(resultingMessage.getHeaders()).containsEntry("originalPayload", "expected_message");
-		}
-		finally {
-			template.stop();
-			template.destroy();
-		}
-	}
-
-	@Test
 	public void testMessageReturnNoHeadersProvidedByListener() throws Exception {
 		ReplyingKafkaTemplate<Integer, String, String> template = createTemplate(H_REPLY);
 		try {
@@ -526,7 +461,7 @@ public class ReplyingKafkaTemplateTests {
 			ConsumerRecord<Integer, String> consumerRecord = future.get(30, TimeUnit.SECONDS);
 			assertThat(consumerRecord.value()).isEqualTo("qUX");
 			Map<String, Object> receivedHeaders = new HashMap<>();
-			new JsonKafkaHeaderMapper().toHeaders(consumerRecord.headers(), receivedHeaders);
+			new DefaultKafkaHeaderMapper().toHeaders(consumerRecord.headers(), receivedHeaders);
 			assertThat(receivedHeaders).containsKey("qux");
 			assertThat(receivedHeaders).doesNotContainKey("baz");
 			assertThat(receivedHeaders).hasSize(2);
@@ -772,7 +707,7 @@ public class ReplyingKafkaTemplateTests {
 			}
 
 		});
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, this.testName, false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.testName, "false", embeddedKafka);
 		if (badDeser) {
 			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
 			consumerProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, BadDeser.class);
@@ -796,7 +731,7 @@ public class ReplyingKafkaTemplateTests {
 			throws InterruptedException {
 
 		ContainerProperties containerProperties = new ContainerProperties(topic);
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, this.testName, false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.testName, "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		KafkaMessageListenerContainer<Integer, String> container = new KafkaMessageListenerContainer<>(cf,
 				containerProperties);
@@ -816,7 +751,7 @@ public class ReplyingKafkaTemplateTests {
 
 		ContainerProperties containerProperties = new ContainerProperties(topic);
 		containerProperties.setAckMode(AckMode.MANUAL_IMMEDIATE);
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, this.testName, false);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.testName, "false", embeddedKafka);
 		DefaultKafkaConsumerFactory<Integer, Collection<ConsumerRecord<Integer, String>>> cf =
 				new DefaultKafkaConsumerFactory<>(consumerProps);
 		KafkaMessageListenerContainer<Integer, Collection<ConsumerRecord<Integer, String>>> container =
@@ -903,8 +838,19 @@ public class ReplyingKafkaTemplateTests {
 		CompletableFuture future = template.sendAndReceive(msg, Duration.ofMillis(10),
 				new ParameterizedTypeReference<Foo>() {
 				});
-		assertThatExceptionOfType(ExecutionException.class).isThrownBy(() -> future.get(10, TimeUnit.SECONDS));
-		assertThat(System.currentTimeMillis() - t1).isLessThan(3000L);
+		try {
+			future.get(10, TimeUnit.SECONDS);
+		}
+		catch (TimeoutException ex) {
+			fail("get timed out");
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			fail("Interrupted");
+		}
+		catch (ExecutionException e) {
+			assertThat(System.currentTimeMillis() - t1).isLessThan(3000L);
+		}
 	}
 
 	@Test
@@ -941,7 +887,7 @@ public class ReplyingKafkaTemplateTests {
 
 		@Bean
 		public DefaultKafkaConsumerFactory<Integer, String> cf() {
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(this.embeddedKafka, "serverSide", false);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("serverSide", "false", this.embeddedKafka);
 			return new DefaultKafkaConsumerFactory<>(consumerProps);
 		}
 
@@ -1100,21 +1046,6 @@ public class ReplyingKafkaTemplateTests {
 			return Collections.singletonList(message);
 		}
 
-		@KafkaListener(id = CUSTOM_REPLY_HEADER_REQUEST, topics = CUSTOM_REPLY_HEADER_REQUEST)
-		@SendTo(CUSTOM_REPLY_HEADER_REPLY)
-		public Message<String> handleCustomReplyHeaderNoReplyPartition(ConsumerRecord<?, String> inputMessage) {
-			return MessageBuilder.withPayload("OK")
-					.setHeader("originalPayload", inputMessage.value())
-					.build();
-		}
-
-		@KafkaListener(id = CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST, topics = CUSTOM_REPLY_HEADER_WITH_PARTITION_REQUEST)
-		@SendTo(CUSTOM_REPLY_HEADER_WITH_PARTITION_REPLY)
-		public Message<String> handleCustomReplyHeaderDefaultPartitionHeader(ConsumerRecord<?, String> inputMessage) {
-			return MessageBuilder.withPayload("OK")
-					.setHeader("originalPayload", inputMessage.value())
-					.build();
-		}
 	}
 
 	@KafkaListener(topics = C_REQUEST, groupId = C_REQUEST)

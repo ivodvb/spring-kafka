@@ -27,7 +27,6 @@ import org.apache.kafka.common.utils.Bytes;
  * Convenient when used with one of the Json message converters.
  *
  * @author Gary Russell
- * @author Ngoc Nhan
  * @since 2.3
  *
  */
@@ -40,26 +39,23 @@ public class StringOrBytesSerializer implements Serializer<Object> {
 		this.stringSerializer.configure(configs, isKey);
 	}
 
-	@SuppressWarnings("NullAway") // Dataflow analysis limitation
 	@Override
 	public byte[] serialize(String topic, Object data) {
-		if (data == null) {
+		if (data instanceof byte[]) {
+			return (byte[]) data;
+		}
+		else if (data instanceof Bytes) {
+			return ((Bytes) data).get();
+		}
+		else if (data instanceof String) {
+			return this.stringSerializer.serialize(topic, (String) data);
+		}
+		else if (data == null) {
 			return null;
 		}
-
-		if (data instanceof byte[] bytes) {
-			return bytes;
+		else {
+			throw new IllegalStateException("This serializer can only handle byte[], Bytes or String values");
 		}
-
-		if (data instanceof Bytes bytes) {
-			return bytes.get();
-		}
-
-		if (data instanceof String string) {
-			return this.stringSerializer.serialize(topic, string);
-		}
-
-		throw new IllegalStateException("This serializer can only handle byte[], Bytes or String values");
 	}
 
 	@Override

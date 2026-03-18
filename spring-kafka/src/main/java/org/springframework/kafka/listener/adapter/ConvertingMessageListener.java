@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.listener.AcknowledgingConsumerAwareMessageListener;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
@@ -61,7 +60,7 @@ public class ConvertingMessageListener<V> implements DelegatingMessageListener<M
 
 	private MessageConverter messageConverter;
 
-	private @Nullable KafkaHeaderMapper headerMapper;
+	private KafkaHeaderMapper headerMapper;
 
 	/**
 	 * Construct an instance with the provided {@link MessageListener} and {@link Class}
@@ -107,7 +106,7 @@ public class ConvertingMessageListener<V> implements DelegatingMessageListener<M
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public void onMessage(ConsumerRecord receivedRecord, @Nullable Acknowledgment acknowledgment, @Nullable Consumer consumer) {
+	public void onMessage(ConsumerRecord receivedRecord, Acknowledgment acknowledgment, Consumer consumer) {
 		ConsumerRecord convertedConsumerRecord = convertConsumerRecord(receivedRecord);
 		if (this.delegate instanceof AcknowledgingConsumerAwareMessageListener) {
 			this.delegate.onMessage(convertedConsumerRecord, acknowledgment, consumer);

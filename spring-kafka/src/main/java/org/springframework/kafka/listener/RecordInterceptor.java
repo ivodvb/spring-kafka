@@ -18,7 +18,8 @@ package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.lang.Nullable;
 
 /**
  * An interceptor for {@link ConsumerRecord} invoked by the listener

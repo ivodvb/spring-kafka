@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.jspecify.annotations.Nullable;
 
 import org.springframework.kafka.listener.AcknowledgingConsumerAwareMessageListener;
 import org.springframework.kafka.listener.KafkaBackoffException;
@@ -33,6 +32,7 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.listener.TimestampedException;
 import org.springframework.kafka.retrytopic.RetryTopicHeaders;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.lang.Nullable;
 
 /**
  *
@@ -101,7 +101,7 @@ public class KafkaBackoffAwareMessageListenerAdapter<K, V>
 		}
 	}
 
-	private void invokeDelegateOnMessage(ConsumerRecord<K, V> consumerRecord, @Nullable Acknowledgment acknowledgment, @Nullable Consumer<?, ?> consumer) {
+	private void invokeDelegateOnMessage(ConsumerRecord<K, V> consumerRecord, Acknowledgment acknowledgment, Consumer<?, ?> consumer) {
 		switch (this.delegateType) {
 			case ACKNOWLEDGING_CONSUMER_AWARE -> this.delegate.onMessage(consumerRecord, acknowledgment, consumer);
 			case ACKNOWLEDGING -> this.delegate.onMessage(consumerRecord, acknowledgment);
@@ -111,7 +111,7 @@ public class KafkaBackoffAwareMessageListenerAdapter<K, V>
 	}
 
 	private KafkaConsumerBackoffManager.Context createContext(ConsumerRecord<K, V> data, long nextExecutionTimestamp,
-			@Nullable Consumer<?, ?> consumer) {
+			Consumer<?, ?> consumer) {
 
 		return this.kafkaConsumerBackoffManager.createContext(nextExecutionTimestamp, this.listenerId,
 				new TopicPartition(data.topic(), data.partition()), consumer);
@@ -135,12 +135,12 @@ public class KafkaBackoffAwareMessageListenerAdapter<K, V>
 	}
 
 	@Override
-	public void onMessage(ConsumerRecord<K, V> data, @Nullable Acknowledgment acknowledgment) {
+	public void onMessage(ConsumerRecord<K, V> data, Acknowledgment acknowledgment) {
 		onMessage(data, acknowledgment, null); // NOSONAR
 	}
 
 	@Override
-	public void onMessage(ConsumerRecord<K, V> data, @Nullable Consumer<?, ?> consumer) {
+	public void onMessage(ConsumerRecord<K, V> data, Consumer<?, ?> consumer) {
 		onMessage(data, null, consumer);
 	}
 }

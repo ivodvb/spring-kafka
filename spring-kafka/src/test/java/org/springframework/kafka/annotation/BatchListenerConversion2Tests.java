@@ -36,10 +36,10 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.converter.BytesJacksonJsonMessageConverter;
+import org.springframework.kafka.support.converter.BytesJsonMessageConverter;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.FailedDeserializationInfo;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -105,11 +105,11 @@ public class BatchListenerConversion2Tests {
 		@Bean
 		public Map<String, Object> consumerConfigs() {
 			Map<String, Object> consumerProps =
-					KafkaTestUtils.consumerProps(this.embeddedKafka, DEFAULT_TEST_GROUP_ID, false);
+					KafkaTestUtils.consumerProps(DEFAULT_TEST_GROUP_ID, "false", this.embeddedKafka);
 			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-			consumerProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JacksonJsonDeserializer.class);
+			consumerProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
 			consumerProps.put(ErrorHandlingDeserializer.VALUE_FUNCTION, FailedFooProvider.class);
-			consumerProps.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, Foo.class.getName());
+			consumerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, Foo.class.getName());
 			return consumerProps;
 		}
 
@@ -119,8 +119,8 @@ public class BatchListenerConversion2Tests {
 		}
 
 		@Bean
-		public BytesJacksonJsonMessageConverter converter() {
-			return new BytesJacksonJsonMessageConverter();
+		public BytesJsonMessageConverter converter() {
+			return new BytesJsonMessageConverter();
 		}
 
 		@Bean

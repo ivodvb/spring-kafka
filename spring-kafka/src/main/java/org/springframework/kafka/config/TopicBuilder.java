@@ -24,7 +24,6 @@ import java.util.Optional;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Builder for a {@link NewTopic}. Since 2.6 partitions and replicas default to
@@ -43,7 +42,7 @@ public final class TopicBuilder {
 
 	private Optional<Short> replicas = Optional.empty();
 
-	private @Nullable Map<Integer, List<Integer>> replicasAssignments;
+	private Map<Integer, List<Integer>> replicasAssignments;
 
 	private final Map<String, String> configs = new HashMap<>();
 

@@ -18,7 +18,6 @@ package org.springframework.kafka.support.mapping;
 
 import com.fasterxml.jackson.databind.JavaType;
 import org.apache.kafka.common.header.Headers;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Strategy for setting metadata on messages such that one can create the class that needs
@@ -31,10 +30,7 @@ import org.jspecify.annotations.Nullable;
  * @author Gary Russell
  *
  * @since 2.1
- *
- * @deprecated since 4.0 in favor of {@link JacksonJavaTypeMapper} for Jackson 3.
  */
-@Deprecated(forRemoval = true, since = "4.0")
 public interface Jackson2JavaTypeMapper extends ClassMapper {
 
 	/**
@@ -56,7 +52,6 @@ public interface Jackson2JavaTypeMapper extends ClassMapper {
 
 	void fromJavaType(JavaType javaType, Headers headers);
 
-	@Nullable
 	JavaType toJavaType(Headers headers);
 
 	TypePrecedence getTypePrecedence();

@@ -19,7 +19,6 @@ package org.springframework.kafka.listener;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -32,14 +31,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.jspecify.annotations.Nullable;
 
+import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.support.ExceptionMatcher;
 import org.springframework.kafka.support.KafkaUtils;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.BackOffExecution;
@@ -78,7 +77,7 @@ public final class ErrorHandlingUtils {
 	 * @param logger the logger.
 	 * @param logLevel the log level.
 	 * @param retryListeners the retry listeners.
-	 * @param exceptionMatcher the exception matcher.
+	 * @param classifier the exception classifier.
 	 * @param reClassifyOnExceptionChange true to reset the state if a different exception
 	 * is thrown during retry.
 	 * @since 2.9.7
@@ -86,7 +85,7 @@ public final class ErrorHandlingUtils {
 	public static void retryBatch(Exception thrownException, ConsumerRecords<?, ?> records, Consumer<?, ?> consumer,
 			MessageListenerContainer container, Runnable invokeListener, BackOff backOff,
 			CommonErrorHandler seeker, BiConsumer<ConsumerRecords<?, ?>, Exception> recoverer, LogAccessor logger,
-			KafkaException.Level logLevel, List<RetryListener> retryListeners, ExceptionMatcher exceptionMatcher,
+			KafkaException.Level logLevel, List<RetryListener> retryListeners, BinaryExceptionClassifier classifier,
 			boolean reClassifyOnExceptionChange) {
 
 		BackOffExecution execution = backOff.start();
@@ -104,8 +103,8 @@ public final class ErrorHandlingUtils {
 		try {
 			Exception recoveryException = thrownException;
 			Exception lastException = unwrapIfNeeded(thrownException);
-			boolean retryable = exceptionMatcher.match(lastException);
-			while (retryable && nextBackOff != BackOffExecution.STOP) {
+			Boolean retryable = classifier.classify(lastException);
+			while (Boolean.TRUE.equals(retryable) && nextBackOff != BackOffExecution.STOP) {
 				try {
 					consumer.poll(Duration.ZERO);
 				}
@@ -159,9 +158,8 @@ public final class ErrorHandlingUtils {
 					logger.debug(ex, () -> "Retry failed for: " + toLog);
 					recoveryException = ex;
 					Exception newException = unwrapIfNeeded(ex);
-					if (reClassifyOnExceptionChange && !Objects.requireNonNull(newException).getClass()
-							.equals(Objects.requireNonNull(lastException).getClass())
-							&& !exceptionMatcher.match(newException)) {
+					if (reClassifyOnExceptionChange && !newException.getClass().equals(lastException.getClass())
+							&& !classifier.classify(newException)) {
 
 						break;
 					}
@@ -212,7 +210,7 @@ public final class ErrorHandlingUtils {
 	 * @return the unwrapped cause or cause of cause.
 	 * @since 2.8.11
 	 */
-	public static @Nullable Exception unwrapIfNeeded(@Nullable Exception exception) {
+	public static Exception unwrapIfNeeded(Exception exception) {
 		Exception theEx = exception;
 		if (theEx instanceof TimestampedException && theEx.getCause() instanceof Exception cause) {
 			theEx = cause;
@@ -230,7 +228,7 @@ public final class ErrorHandlingUtils {
 	 * @return the root cause.
 	 * @since 3.0.7
 	 */
-	public static @Nullable Exception findRootCause(@Nullable Exception exception) {
+	public static Exception findRootCause(Exception exception) {
 		Exception realException = exception;
 		while ((realException  instanceof ListenerExecutionFailedException
 				|| realException instanceof TimestampedException)

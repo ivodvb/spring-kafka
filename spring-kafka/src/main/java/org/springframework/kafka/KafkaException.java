@@ -16,10 +16,9 @@
 
 package org.springframework.kafka;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.log.LogAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**

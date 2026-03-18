@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.record.TimestampType;
@@ -86,7 +87,7 @@ public class MockConsumerTests {
 
 		@Bean
 		public ConsumerFactory<String, String> consumerFactory() {
-			MockConsumer<String, String> consumer = new MockConsumer<>("earliest");
+			MockConsumer<String, String> consumer = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
 			TopicPartition topicPartition0 = new TopicPartition("foo", 0);
 			TopicPartition topicPartition1 = new TopicPartition("foo", 1);
 			TopicPartition topicPartition2 = new TopicPartition("foo", 2);

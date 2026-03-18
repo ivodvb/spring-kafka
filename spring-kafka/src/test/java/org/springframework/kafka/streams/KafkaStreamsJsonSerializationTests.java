@@ -47,8 +47,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JacksonJsonSerde;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -75,10 +75,10 @@ public class KafkaStreamsJsonSerializationTests {
 
 	public static final String OBJECT_OUTPUT_TOPIC = "object-output-topic";
 
-	public static final JacksonJsonSerde<JsonObjectKey> jsonObjectKeySerde =
-			new JacksonJsonSerde<>(JsonObjectKey.class).forKeys();
+	public static final JsonSerde<JsonObjectKey> jsonObjectKeySerde =
+			new JsonSerde<>(JsonObjectKey.class).forKeys();
 
-	public static final JacksonJsonSerde<JsonObjectValue> jsonObjectValueSerde = new JacksonJsonSerde<>(JsonObjectValue.class);
+	public static final JsonSerde<JsonObjectValue> jsonObjectValueSerde = new JsonSerde<>(JsonObjectValue.class);
 
 	@Autowired
 	private KafkaTemplate<Object, Object> template;
@@ -117,7 +117,7 @@ public class KafkaStreamsJsonSerializationTests {
 
 	private <K, V> Consumer<K, V> consumer(String topic, Serde<K> keySerde, Serde<V> valueSerde) {
 		Map<String, Object> consumerProps =
-				KafkaTestUtils.consumerProps(this.embeddedKafka, UUID.randomUUID().toString(), false);
+				KafkaTestUtils.consumerProps(UUID.randomUUID().toString(), "false", this.embeddedKafka);
 		consumerProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 10000);
 
 		DefaultKafkaConsumerFactory<K, V> kafkaConsumerFactory =
@@ -163,7 +163,7 @@ public class KafkaStreamsJsonSerializationTests {
 		}
 
 		public static Serde<JsonObjectValue> jsonObjectValueSerde() {
-			return new JacksonJsonSerde<>(JsonObjectValue.class);
+			return new JsonSerde<>(JsonObjectValue.class);
 		}
 
 		@Override
@@ -190,8 +190,8 @@ public class KafkaStreamsJsonSerializationTests {
 		@Bean
 		public Map<String, Object> producerConfigs() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(this.brokerAddresses);
-			senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-			senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+			senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+			senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 			return senderProps;
 		}
 

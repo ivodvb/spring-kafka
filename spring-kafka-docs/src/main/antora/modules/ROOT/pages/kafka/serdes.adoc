@@ -23,7 +23,7 @@ For more complex or particular cases, the `KafkaConsumer` (and, therefore, `Kafk
 constructors to accept `Serializer` and `Deserializer` instances for `keys` and `values`, respectively.
 
 When you use this API, the `DefaultKafkaProducerFactory` and `DefaultKafkaConsumerFactory` also provide properties (through constructors or setter methods) to inject custom `Serializer` and `Deserializer` instances into the target `Producer` or `Consumer`.
-Also, you can pass in `Supplier<Serializer>` or `Supplier<Deserializer>` instances through constructors - these ``Supplier``s are called on creation of each `Producer` or `Consumer`.
+Also, you can pass in `Supplier<Serializer>` or `Supplier<Deserializer>` instances through constructors - these `Supplier`+++s+++ are called on creation of each `Producer` or `Consumer`.
 
 [[string-serde]]
 == String serialization
@@ -75,25 +75,25 @@ A `ToFromStringSerde` is also provided, for use with Kafka Streams.
 [[json-serde]]
 == JSON
 
-Spring for Apache Kafka also provides `JacksonJsonSerializer` and `JacksonJsonDeserializer` implementations that are based on the
+Spring for Apache Kafka also provides `JsonSerializer` and `JsonDeserializer` implementations that are based on the
 Jackson JSON object mapper.
-The `JacksonJsonSerializer` allows writing any Java object as a JSON `byte[]`.
-The `JacksonJsonDeserializer` requires an additional `Class<?> targetType` argument to allow the deserialization of a consumed `byte[]` to the proper target object.
-The following example shows how to create a `JacksonJsonDeserializer`:
+The `JsonSerializer` allows writing any Java object as a JSON `byte[]`.
+The `JsonDeserializer` requires an additional `Class<?> targetType` argument to allow the deserialization of a consumed `byte[]` to the proper target object.
+The following example shows how to create a `JsonDeserializer`:
 
 [source, java]
 ----
-JacksonJsonDeserializer<Thing> thingDeserializer = new JacksonJsonDeserializer<>(Thing.class);
+JsonDeserializer<Thing> thingDeserializer = new JsonDeserializer<>(Thing.class);
 ----
 
-You can customize both `JacksonJsonSerializer` and `JacksonJsonDeserializer` with an `ObjectMapper`.
+You can customize both `JsonSerializer` and `JsonDeserializer` with an `ObjectMapper`.
 You can also extend them to implement some particular configuration logic in the `configure(Map<String, ?> configs, boolean isKey)` method.
 
 Starting with version 2.3, all the JSON-aware components are configured by default with a `JacksonUtils.enhancedObjectMapper()` instance, which comes with the `MapperFeature.DEFAULT_VIEW_INCLUSION` and `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` features disabled.
 Also such an instance is supplied with well-known modules for custom data types, such a Java time and Kotlin support.
 See `JacksonUtils.enhancedObjectMapper()` JavaDocs for more information.
 This method also registers a `org.springframework.kafka.support.JacksonMimeTypeModule` for `org.springframework.util.MimeType` objects serialization into the plain string for inter-platform compatibility over the network.
-A `JacksonMimeTypeModule` can be registered as a bean in the application context and it will be auto-configured into the {spring-boot-url}/how-to/spring-mvc.html#howto.spring-mvc.customize-jackson-objectmapper[Spring Boot `ObjectMapper` instance].
+A `JacksonMimeTypeModule` can be registered as a bean in the application context and it will be auto-configured into the https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto.spring-mvc.customize-jackson-objectmapper[Spring Boot `ObjectMapper` instance].
 
 Also starting with version 2.3, the `JsonDeserializer` provides `TypeReference`-based constructors for better handling of target generic container types.
 
@@ -104,22 +104,22 @@ They have no effect if you have provided `Serializer` and `Deserializer` instanc
 [[serdes-json-config]]
 === Configuration Properties
 
-* `JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to disable this feature on the `JacksonJsonSerializer` (sets the `addTypeInfo` property).
-* `JacksonJsonSerializer.TYPE_MAPPINGS` (default `empty`): See xref:kafka/serdes.adoc#serdes-mapping-types[Mapping Types].
-* `JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to ignore headers set by the serializer.
-* `JacksonJsonDeserializer.REMOVE_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to retain headers set by the serializer.
-* `JacksonJsonDeserializer.KEY_DEFAULT_TYPE`: Fallback type for deserialization of keys if no header information is present.
-* `JacksonJsonDeserializer.VALUE_DEFAULT_TYPE`: Fallback type for deserialization of values if no header information is present.
-* `JacksonJsonDeserializer.TRUSTED_PACKAGES` (default `java.util`, `java.lang`): Comma-delimited list of package patterns allowed for deserialization.
+* `JsonSerializer.ADD_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to disable this feature on the `JsonSerializer` (sets the `addTypeInfo` property).
+* `JsonSerializer.TYPE_MAPPINGS` (default `empty`): See xref:kafka/serdes.adoc#serdes-mapping-types[Mapping Types].
+* `JsonDeserializer.USE_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to ignore headers set by the serializer.
+* `JsonDeserializer.REMOVE_TYPE_INFO_HEADERS` (default `true`): You can set it to `false` to retain headers set by the serializer.
+* `JsonDeserializer.KEY_DEFAULT_TYPE`: Fallback type for deserialization of keys if no header information is present.
+* `JsonDeserializer.VALUE_DEFAULT_TYPE`: Fallback type for deserialization of values if no header information is present.
+* `JsonDeserializer.TRUSTED_PACKAGES` (default `java.util`, `java.lang`): Comma-delimited list of package patterns allowed for deserialization.
 `*` means deserializing all.
-* `JacksonJsonDeserializer.TYPE_MAPPINGS` (default `empty`): See xref:kafka/serdes.adoc#serdes-mapping-types[Mapping Types].
-* `JacksonJsonDeserializer.KEY_TYPE_METHOD` (default `empty`): See xref:kafka/serdes.adoc#serdes-type-methods[Using Methods to Determine Types].
-* `JacksonJsonDeserializer.VALUE_TYPE_METHOD` (default `empty`): See xref:kafka/serdes.adoc#serdes-type-methods[Using Methods to Determine Types].
+* `JsonDeserializer.TYPE_MAPPINGS` (default `empty`): See xref:kafka/serdes.adoc#serdes-mapping-types[Mapping Types].
+* `JsonDeserializer.KEY_TYPE_METHOD` (default `empty`): See xref:kafka/serdes.adoc#serdes-type-methods[Using Methods to Determine Types].
+* `JsonDeserializer.VALUE_TYPE_METHOD` (default `empty`): See xref:kafka/serdes.adoc#serdes-type-methods[Using Methods to Determine Types].
 
 Starting with version 2.2, the type information headers (if added by the serializer) are removed by the deserializer.
 You can revert to the previous behavior by setting the `removeTypeHeaders` property to `false`, either directly on the deserializer or with the configuration property described earlier.
 
-See also xref:tips.adoc#tip-json[Customizing the JacksonJsonSerializer and JacksonJsonDeserializer].
+See also xref:tips.adoc#tip-json[Customizing the JsonSerializer and JsonDeserializer].
 
 IMPORTANT: Starting with version 2.8, if you construct the serializer or deserializer programmatically as shown in xref:kafka/serdes.adoc#prog-json[Programmatic Construction], the above properties will be applied by the factories, as long as you have not set any properties explicitly (using `set*()` methods or using the fluent API).
 Previously, when creating programmatically, the configuration properties were never applied; this is still the case if you explicitly set properties on the object directly.
@@ -146,7 +146,7 @@ consumerProps.put(JsonDeserializer.TYPE_MAPPINGS, "cat:com.yourcat.Cat, hat:com.
 
 IMPORTANT: The corresponding objects must be compatible.
 
-If you use {spring-boot-url}/reference/messaging/kafka.html[Spring Boot], you can provide these properties in the `application.properties` (or yaml) file.
+If you use https://docs.spring.io/spring-boot/docs/current/reference/html/messaging.html#messaging.kafka[Spring Boot], you can provide these properties in the `application.properties` (or yaml) file.
 The following example shows how to do so:
 
 [source]
@@ -194,7 +194,7 @@ The following example shows how to do so:
 [source, java]
 ----
 DefaultKafkaConsumerFactory<Integer, Cat1> cf = new DefaultKafkaConsumerFactory<>(props,
-        new IntegerDeserializer(), new JacksonJsonDeserializer<>(Cat1.class, false));
+        new IntegerDeserializer(), new JsonDeserializer<>(Cat1.class, false));
 ----
 
 [[serdes-type-methods]]
@@ -234,7 +234,7 @@ The following is an example of creating the deserializer programmatically (when 
 
 [source, java]
 ----
-JacksonJsonDeserializer<Object> deser = new JacksonJsonDeserializer<>()
+JsonDeserializer<Object> deser = new JsonDeserializer<>()
         .trustedPackages("*")
         .typeResolver(SomeClass::thing1Thing2JavaTypeForTopic);
 
@@ -258,10 +258,10 @@ public ProducerFactory<MyKeyType, MyValueType> pf() {
     // props.put(..., ...)
     // ...
     DefaultKafkaProducerFactory<MyKeyType, MyValueType> pf = new DefaultKafkaProducerFactory<>(props,
-        new JacksonJsonSerializer<MyKeyType>()
+        new JsonSerializer<MyKeyType>()
             .forKeys()
             .noTypeInfo(),
-        new JacksonJsonSerializer<MyValueType>()
+        new JsonSerializer<MyValueType>()
             .noTypeInfo());
     return pf;
 }
@@ -272,10 +272,10 @@ public ConsumerFactory<MyKeyType, MyValueType> cf() {
     // props.put(..., ...)
     // ...
     DefaultKafkaConsumerFactory<MyKeyType, MyValueType> cf = new DefaultKafkaConsumerFactory<>(props,
-        new JacksonJsonDeserializer<>(MyKeyType.class)
+        new JsonDeserializer<>(MyKeyType.class)
             .forKeys()
             .ignoreTypeHeaders(),
-        new JacksonJsonDeserializer<>(MyValueType.class)
+        new JsonDeserializer<>(MyValueType.class)
             .ignoreTypeHeaders());
     return cf;
 }
@@ -285,7 +285,7 @@ To provide type mapping programmatically, similar to xref:kafka/serdes.adoc#serd
 
 [source, java]
 ----
-JacksonJsonDeserializer<Object> deser = new JacksonJsonDeserializer<>()
+JsonDeserializer<Object> deser = new JsonDeserializer<>()
         .trustedPackages("*")
         .typeFunction(MyUtils::thingOneOrThingTwo);
 ----
@@ -355,7 +355,7 @@ In this case, if there are ambiguous matches, an ordered `Map`, such as a `Linke
 === By Topic
 
 Starting with version 2.8, the `DelegatingByTopicSerializer` and `DelegatingByTopicDeserializer` allow selection of a serializer/deserializer based on the topic name.
-Regex ``Pattern``s are used to lookup the instance to use.
+Regex `Pattern`+++s+++ are used to lookup the instance to use.
 The map can be configured using a constructor, or via properties (a comma delimited list of `pattern:serializer`).
 
 [source, java]
@@ -380,7 +380,7 @@ public ProducerFactory<Integer, Object> producerFactory(Map<String, Object> conf
             new DelegatingByTopicSerializer(Map.of(
                     Pattern.compile("topic[0-4]"), new ByteArraySerializer(),
                     Pattern.compile("topic[5-9]"), new StringSerializer())),
-                    new JacksonJsonSerializer<Object>());  // default
+                    new JsonSerializer<Object>());  // default
 }
 ----
 
@@ -400,16 +400,16 @@ ConsumerFactory cf = new DefaultKafkaConsumerFactory(myConsumerConfigs,
     new RetryingDeserializer(myUnreliableValueDeserializer, retryTemplate));
 ----
 
-A recovery callback be set on the `RetryingDeserializer`, to return a fallback object if all retries are exhausted.
+Starting with version `3.1.2`, a `RecoveryCallback` can be set on the `RetryingDeserializer` optionally.
 
-Refer to the https://github.com/spring-projects/spring-framework[Spring Framework] project for configuration of the `RetryTemplate` with a retry policy, back off, etc.
+Refer to the https://github.com/spring-projects/spring-retry[spring-retry] project for configuration of the `RetryTemplate` with a retry policy, back off policy, etc.
 
 
 [[messaging-message-conversion]]
 == Spring Messaging Message Conversion
 
-Although the `Serializer` and `Deserializer` API is quite simple and flexible from the low-level Kafka `Consumer` and `Producer` perspective, you might need more flexibility at the Spring Messaging level, when using either `@KafkaListener` or {spring-integration-url}/kafka.html[Spring Integration's Apache Kafka Support].
-To let you easily convert to and from `org.springframework.messaging.Message`, Spring for Apache Kafka provides a `MessageConverter` abstraction with the `MessagingMessageConverter` implementation and its `JacksonJsonMessageConverter` (and subclasses) customization.
+Although the `Serializer` and `Deserializer` API is quite simple and flexible from the low-level Kafka `Consumer` and `Producer` perspective, you might need more flexibility at the Spring Messaging level, when using either `@KafkaListener` or https://docs.spring.io/spring-integration/docs/current/reference/html/kafka.html#kafka[Spring Integration's Apache Kafka Support].
+To let you easily convert to and from `org.springframework.messaging.Message`, Spring for Apache Kafka provides a `MessageConverter` abstraction with the `MessagingMessageConverter` implementation and its `JsonMessageConverter` (and subclasses) customization.
 You can inject the `MessageConverter` into a `KafkaTemplate` instance directly and by using `AbstractKafkaListenerContainerFactory` bean definition for the `@KafkaListener.containerFactory()` property.
 The following example shows how to do so:
 
@@ -420,7 +420,7 @@ public KafkaListenerContainerFactory<?> kafkaJsonListenerContainerFactory() {
     ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(consumerFactory());
-    factory.setRecordMessageConverter(new JacksonJsonMessageConverter());
+    factory.setRecordMessageConverter(new JsonMessageConverter());
     return factory;
 }
 ...
@@ -443,15 +443,15 @@ With a class-level `@KafkaListener`, the payload type is used to select which `@
 
 [NOTE]
 ====
-On the consumer side, you can configure a `JacksonJsonMessageConverter`; it can handle `ConsumerRecord` values of type `byte[]`, `Bytes` and `String` so should be used in conjunction with a `ByteArrayDeserializer`, `BytesDeserializer` or `StringDeserializer`.
+On the consumer side, you can configure a `JsonMessageConverter`; it can handle `ConsumerRecord` values of type `byte[]`, `Bytes` and `String` so should be used in conjunction with a `ByteArrayDeserializer`, `BytesDeserializer` or `StringDeserializer`.
 (`byte[]` and `Bytes` are more efficient because they avoid an unnecessary `byte[]` to `String` conversion).
-You can also configure the specific subclass of `JacksonJsonMessageConverter` corresponding to the deserializer, if you so wish.
+You can also configure the specific subclass of `JsonMessageConverter` corresponding to the deserializer, if you so wish.
 
 On the producer side, when you use Spring Integration or the `KafkaTemplate.send(Message<?> message)` method (see xref:kafka/sending-messages.adoc#kafka-template[Using `KafkaTemplate`]), you must configure a message converter that is compatible with the configured Kafka `Serializer`.
 
-* `StringJacksonJsonMessageConverter` with `StringSerializer`
-* `BytesJacksonJsonMessageConverter` with `BytesSerializer`
-* `ByteArrayJacksonJsonMessageConverter` with `ByteArraySerializer`
+* `StringJsonMessageConverter` with `StringSerializer`
+* `BytesJsonMessageConverter` with `BytesSerializer`
+* `ByteArrayJsonMessageConverter` with `ByteArraySerializer`
 
 Again, using `byte[]` or `Bytes` is more efficient because they avoid a `String` to `byte[]` conversion.
 
@@ -513,7 +513,7 @@ public void projection(SomeSample in) {
 Accessor methods will be used to lookup the property name as field in the received JSON document by default.
 The `@JsonPath` expression allows customization of the value lookup, and even to define multiple JSON Path expressions, to look up values from multiple places until an expression returns an actual value.
 
-To enable this feature, use a `JacksonProjectingMessageConverter` configured with an appropriate delegate converter (used for outbound conversion and converting non-projection interfaces).
+To enable this feature, use a `ProjectingMessageConverter` configured with an appropriate delegate converter (used for outbound conversion and converting non-projection interfaces).
 You must also add `spring-data:spring-data-commons` and `com.jayway.jsonpath:json-path` to the classpath.
 
 When used as the parameter to a `@KafkaListener` method, the interface type is automatically passed to the converter as normal.
@@ -532,7 +532,7 @@ Alternatively, you can configure the `ErrorHandlingDeserializer` to create a cus
 This function is invoked to create an instance of `T`, which is passed to the listener in the usual fashion.
 An object of type `FailedDeserializationInfo`, which contains all the contextual information is provided to the function.
 You can find the `DeserializationException` (as a serialized Java object) in headers.
-See the javadoc:org.springframework.kafka.support.serializer.ErrorHandlingDeserializer[Javadoc] for the `ErrorHandlingDeserializer` for more information.
+See the https://docs.spring.io/spring-kafka/api/org/springframework/kafka/support/serializer/ErrorHandlingDeserializer.html[Javadoc] for the `ErrorHandlingDeserializer` for more information.
 
 You can use the `DefaultKafkaConsumerFactory` constructor that takes key and value `Deserializer` objects and wire in appropriate `ErrorHandlingDeserializer` instances that you have configured with the proper delegates.
 Alternatively, you can use consumer configuration properties (which are used by the `ErrorHandlingDeserializer`) to instantiate the delegates.
@@ -602,7 +602,7 @@ One technique is to use the `DelegatingByTypeSerializer`; an example follows:
 public ProducerFactory<String, Object> producerFactory() {
   return new DefaultKafkaProducerFactory<>(producerConfiguration(), new StringSerializer(),
     new DelegatingByTypeSerializer(Map.of(byte[].class, new ByteArraySerializer(),
-          MyNormalObject.class, new JacksonJsonSerializer<Object>())));
+          MyNormalObject.class, new JsonSerializer<Object>())));
 }
 
 @Bean
@@ -673,11 +673,11 @@ When using Spring Boot, this property name is `spring.kafka.consumer.properties.
 [[payload-conversion-with-batch]]
 == Payload Conversion with Batch Listeners
 
-You can also use a `JacksonJsonMessageConverter` within a `BatchMessagingMessageConverter` to convert batch messages when you use a batch listener container factory.
+You can also use a `JsonMessageConverter` within a `BatchMessagingMessageConverter` to convert batch messages when you use a batch listener container factory.
 See xref:kafka/serdes.adoc[Serialization, Deserialization, and Message Conversion] and xref:kafka/serdes.adoc#messaging-message-conversion[Spring Messaging Message Conversion] for more information.
 
 By default, the type for the conversion is inferred from the listener argument.
-If you configure the `JacksonJsonMessageConverter` with a `DefaultJackson2TypeMapper` that has its `TypePrecedence` set to `TYPE_ID` (instead of the default `INFERRED`), the converter uses the type information in headers (if present) instead.
+If you configure the `JsonMessageConverter` with a `DefaultJackson2TypeMapper` that has its `TypePrecedence` set to `TYPE_ID` (instead of the default `INFERRED`), the converter uses the type information in headers (if present) instead.
 This allows, for example, listener methods to be declared with interfaces instead of concrete classes.
 Also, the type converter supports mapping, so the deserialization can be to a different type than the source (as long as the data is compatible).
 This is also useful when you use xref:kafka/receiving-messages/class-level-kafkalistener.adoc[class-level `@KafkaListener` instances] where the payload must have already been converted to determine which method to invoke.
@@ -696,8 +696,8 @@ public KafkaListenerContainerFactory<?> kafkaListenerContainerFactory() {
 }
 
 @Bean
-public JacksonJsonMessageConverter converter() {
-    return new JacksonJsonMessageConverter();
+public JsonMessageConverter converter() {
+    return new JsonMessageConverter();
 }
 ----
 

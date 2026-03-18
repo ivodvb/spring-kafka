@@ -602,9 +602,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		@KafkaHandler
 		public CompletableFuture<Void> listen(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic) {
@@ -634,9 +634,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		private CountDownLatch firstRetryFailMsgLatch = new CountDownLatch(1);
 
@@ -691,9 +691,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		private CountDownLatch firstRetryFailMsgLatch = new CountDownLatch(1);
 
@@ -750,9 +750,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String FAIL_PREFIX = "fail";
 
@@ -815,9 +815,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String LONG_SUCCESS_MSG = "success";
 
@@ -881,9 +881,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String LONG_SUCCESS_MSG = "success";
 
@@ -947,9 +947,9 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 		@Autowired
 		CountDownLatchContainer container;
 
-		private final List<String> receivedMsgs = Collections.synchronizedList(new ArrayList<>());
+		protected final List<String> receivedMsgs = new ArrayList<>();
 
-		private final List<String> receivedTopics = Collections.synchronizedList(new ArrayList<>());
+		private final List<String> receivedTopics = new ArrayList<>();
 
 		public static final String SUCCESS_PREFIX = "success";
 
@@ -1080,7 +1080,7 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 
 	static class MyCustomDltProcessor {
 
-		private final List<String> receivedMsg = Collections.synchronizedList(new ArrayList<>());
+		final List<String> receivedMsg = new ArrayList<>();
 
 		MyCustomDltProcessor(KafkaTemplate<String, String> kafkaTemplate,
 									CountDownLatch latch) {
@@ -1334,7 +1334,7 @@ public class AsyncCompletableFutureRetryTopicScenarioTests {
 			Map<String, Object> props = KafkaTestUtils.consumerProps(
 					this.broker.getBrokersAsString(),
 					"groupId",
-					false);
+					"false");
 			return new DefaultKafkaConsumerFactory<>(props);
 		}
 

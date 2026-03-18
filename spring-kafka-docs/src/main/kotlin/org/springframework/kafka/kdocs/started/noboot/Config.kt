@@ -41,9 +41,8 @@ class Config {
 
     @Bean
     fun kafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Int, String>) =
-        ConcurrentKafkaListenerContainerFactory<Int, String>().apply {
-            setConsumerFactory(consumerFactory)
-        }
+        ConcurrentKafkaListenerContainerFactory<Int, String>().also { it.consumerFactory = consumerFactory }
+
 
     @Bean
     fun consumerFactory() = DefaultKafkaConsumerFactory<Int, String>(consumerProps)

@@ -23,12 +23,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.jspecify.annotations.Nullable;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -145,7 +144,7 @@ public class ListenerContainerFactoryResolver {
 	}
 
 	@Nullable
-	private ConcurrentKafkaListenerContainerFactory<?, ?> fromBeanName(@Nullable String factoryBeanName) {
+	private ConcurrentKafkaListenerContainerFactory<?, ?> fromBeanName(String factoryBeanName) {
 		try {
 			return StringUtils.hasText(factoryBeanName)
 					? this.beanFactory.getBean(factoryBeanName, ConcurrentKafkaListenerContainerFactory.class)
@@ -157,19 +156,18 @@ public class ListenerContainerFactoryResolver {
 	}
 
 	private interface FactoryResolver {
-		@Nullable
-		ConcurrentKafkaListenerContainerFactory<?, ?> resolveFactory(@Nullable ConcurrentKafkaListenerContainerFactory<?, ?> candidate,
+		ConcurrentKafkaListenerContainerFactory<?, ?> resolveFactory(ConcurrentKafkaListenerContainerFactory<?, ?> candidate,
 																	Configuration configuration);
 	}
 
 	static class Configuration {
 
-		private final @Nullable ConcurrentKafkaListenerContainerFactory<?, ?> factoryFromRetryTopicConfiguration;
+		private final ConcurrentKafkaListenerContainerFactory<?, ?> factoryFromRetryTopicConfiguration;
 
-		private final @Nullable String listenerContainerFactoryName;
+		private final String listenerContainerFactoryName;
 
-		Configuration(@Nullable ConcurrentKafkaListenerContainerFactory<?, ?> factoryFromRetryTopicConfiguration,
-					@Nullable String listenerContainerFactoryName) {
+		Configuration(ConcurrentKafkaListenerContainerFactory<?, ?> factoryFromRetryTopicConfiguration,
+					String listenerContainerFactoryName) {
 			this.factoryFromRetryTopicConfiguration = factoryFromRetryTopicConfiguration;
 			this.listenerContainerFactoryName = listenerContainerFactoryName;
 		}
@@ -202,7 +200,7 @@ public class ListenerContainerFactoryResolver {
 			this.cacheMap = new HashMap<>();
 		}
 
-		ConcurrentKafkaListenerContainerFactory<?, ?> addIfAbsent(@Nullable KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation,
+		ConcurrentKafkaListenerContainerFactory<?, ?> addIfAbsent(KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation,
 																Configuration config,
 																ConcurrentKafkaListenerContainerFactory<?, ?> resolvedFactory) {
 			synchronized (this.cacheMap) {
@@ -212,25 +210,24 @@ public class ListenerContainerFactoryResolver {
 			}
 		}
 
-		@Nullable
-		ConcurrentKafkaListenerContainerFactory<?, ?> fromCache(@Nullable KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation,
+		ConcurrentKafkaListenerContainerFactory<?, ?> fromCache(KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation,
 																Configuration config) {
 			synchronized (this.cacheMap) {
 				return this.cacheMap.get(cacheKey(factoryFromKafkaListenerAnnotation, config));
 			}
 		}
 
-		private Key cacheKey(@Nullable KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation, Configuration config) {
+		private Key cacheKey(KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation, Configuration config) {
 			return new Key(factoryFromKafkaListenerAnnotation, config);
 		}
 
 		static class Key {
 
-			private final @Nullable KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation;
+			private final KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation;
 
 			private final Configuration config;
 
-			Key(@Nullable KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation, Configuration config) {
+			Key(KafkaListenerContainerFactory<?> factoryFromKafkaListenerAnnotation, Configuration config) {
 				this.factoryFromKafkaListenerAnnotation = factoryFromKafkaListenerAnnotation;
 				this.config = config;
 			}

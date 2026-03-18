@@ -18,7 +18,6 @@ package org.springframework.kafka.listener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A listener for retry activity.
@@ -36,14 +35,14 @@ public interface RetryListener {
 	 * @param ex the exception.
 	 * @param deliveryAttempt the delivery attempt.
 	 */
-	void failedDelivery(ConsumerRecord<?, ?> record, @Nullable Exception ex, int deliveryAttempt);
+	void failedDelivery(ConsumerRecord<?, ?> record, Exception ex, int deliveryAttempt);
 
 	/**
 	 * Called after a failing record was successfully recovered.
 	 * @param record the record.
 	 * @param ex the exception.
 	 */
-	default void recovered(ConsumerRecord<?, ?> record, @Nullable Exception ex) {
+	default void recovered(ConsumerRecord<?, ?> record, Exception ex) {
 	}
 
 	/**
@@ -52,7 +51,7 @@ public interface RetryListener {
 	 * @param original the original exception causing the recovery attempt.
 	 * @param failure the exception thrown by the recoverer.
 	 */
-	default void recoveryFailed(ConsumerRecord<?, ?> record, @Nullable Exception original, Exception failure) {
+	default void recoveryFailed(ConsumerRecord<?, ?> record, Exception original, Exception failure) {
 	}
 
 	/**
