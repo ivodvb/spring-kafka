@@ -84,16 +84,16 @@ class Application {
     fun runner(template: ReplyingKafkaTemplate<String?, String?, String?>): ApplicationRunner {
         return ApplicationRunner { _ ->
 // tag::sendReceive[]
-            val future1: RequestReplyTypedMessageFuture<String?, String?, Thing?>? =
+            val future1: RequestReplyTypedMessageFuture<String?, String?, Thing>? =
                 template.sendAndReceive(MessageBuilder.withPayload("getAThing").build(),
-                    object : ParameterizedTypeReference<Thing?>() {})
+                    object : ParameterizedTypeReference<Thing>() {})
             log.info(future1?.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata?.toString())
             val thing = future1?.get(10, TimeUnit.SECONDS)?.payload
             log.info(thing.toString())
 
-            val future2: RequestReplyTypedMessageFuture<String?, String?, List<Thing?>?>? =
+            val future2: RequestReplyTypedMessageFuture<String?, String?, List<Thing>>? =
                 template.sendAndReceive(MessageBuilder.withPayload("getThings").build(),
-                    object : ParameterizedTypeReference<List<Thing?>?>() {})
+                    object : ParameterizedTypeReference<List<Thing>>() {})
             log.info(future2?.sendFuture?.get(10, TimeUnit.SECONDS)?.recordMetadata.toString())
             val things = future2?.get(10, TimeUnit.SECONDS)?.payload
             things?.forEach(Consumer { thing1: Thing? -> log.info(thing1.toString()) })
